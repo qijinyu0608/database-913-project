@@ -1,0 +1,19 @@
+USE national_park_db;
+GO
+
+-- 1. 执法监管业务线关联的共享基础表查询
+SELECT * FROM tb_law_enforce_device; -- 执法设备表
+GO
+
+-- 2. 执法监管业务线专属表查询
+SELECT * FROM tb_law_enforcer; -- 执法人员信息表
+GO
+
+SELECT * FROM tb_video_monitor; -- 视频监控点信息表
+GO
+
+SELECT * FROM tb_illegal_behavior; -- 非法行为记录表
+GO
+
+SELECT * FROM tb_enforcement_dispatch; -- 执法调度信息表
+GO

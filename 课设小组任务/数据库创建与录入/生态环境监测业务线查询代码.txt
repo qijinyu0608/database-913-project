@@ -1,0 +1,7 @@
+USE national_park_db;
+GO
+
+-- 生态环境监测业务线数据查询
+SELECT * FROM tb_monitor_index; -- 查询监测指标表（20条）
+SELECT * FROM tb_environment_data; -- 查询环境监测数据表（20条）
+GO

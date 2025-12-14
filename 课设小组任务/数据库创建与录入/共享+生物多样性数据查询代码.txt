@@ -1,0 +1,14 @@
+-- 1. 共享基础表查询
+SELECT * FROM tb_area_info; -- 区域信息表
+SELECT * FROM tb_staff_info; -- 工作人员表
+SELECT * FROM tb_law_enforce_device; -- 执法设备表
+SELECT * FROM tb_researcher_info; -- 科研人员表
+SELECT * FROM tb_monitor_device; -- 监测设备表
+GO
+
+-- 2. 生物多样性监测业务线查询
+SELECT * FROM tb_species_info; -- 物种信息表
+SELECT * FROM tb_habitat_info; -- 栖息地信息表
+SELECT * FROM tb_habitat_species_rel; -- 物种-栖息地关联表
+SELECT * FROM tb_monitor_record; -- 监测记录表
+GO

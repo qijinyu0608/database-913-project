@@ -1,0 +1,32 @@
+-- 1. 共享基础表查询
+SELECT * FROM tb_area_info; -- 区域信息表
+SELECT * FROM tb_staff_info; -- 工作人员表
+SELECT * FROM tb_law_enforce_device; -- 执法设备表
+SELECT * FROM tb_researcher_info; -- 科研人员表
+SELECT * FROM tb_monitor_device; -- 监测设备表
+GO
+
+-- 2. 生物多样性监测业务线查询
+SELECT * FROM tb_species_info; -- 物种信息表
+SELECT * FROM tb_habitat_info; -- 栖息地信息表
+SELECT * FROM tb_habitat_species_rel; -- 物种-栖息地关联表
+SELECT * FROM tb_monitor_record; -- 监测记录表
+GO
+
+-- 3.1. 执法监管业务线关联的共享基础表查询
+SELECT * FROM tb_law_enforce_device; -- 执法设备表
+GO
+
+-- 3.2. 执法监管业务线专属表查询
+SELECT * FROM tb_law_enforcer; -- 执法人员信息表
+SELECT * FROM tb_video_monitor; -- 视频监控点信息表
+SELECT * FROM tb_illegal_behavior; -- 非法行为记录表
+SELECT * FROM tb_enforcement_dispatch; -- 执法调度信息表
+GO
+
+-- 4. 游客智能管理业务线专属表查询
+select * from tb_reservation_record;
+select * from tb_visitor_info;
+select * from tb_visitor_track;
+select * from tb_flow_control;
+GO

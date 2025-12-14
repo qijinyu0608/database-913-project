@@ -1,0 +1,377 @@
+-- 1. 创建数据库（若未创建）
+CREATE DATABASE national_park_db;
+GO
+
+USE national_park_db;
+GO
+
+-- ==============================================
+-- 一、共享基础表
+-- ==============================================
+
+-- 1.1 区域信息表（tb_area_info）
+CREATE TABLE tb_area_info (
+    area_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_area_info_area_id CHECK (area_id LIKE 'AREA-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    area_name VARCHAR(50) NOT NULL,
+    area_level VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_area_info_area_level CHECK (area_level IN ('核心保护区', '缓冲区', '实验区')),
+    area_lng_range VARCHAR(50) NOT NULL,
+    area_lat_range VARCHAR(50) NOT NULL
+);
+GO
+
+-- 1.2 工作人员表（tb_staff_info）
+CREATE TABLE tb_staff_info (
+    staff_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_staff_info_staff_id CHECK (staff_id LIKE 'STAFF-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    staff_name VARCHAR(20) NOT NULL,
+    staff_role VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_staff_info_staff_role CHECK (staff_role IN ('生态监测员', '数据分析师', '执法人员', '科研人员', '技术人员')),
+    department VARCHAR(30) NOT NULL,
+    contact_phone VARCHAR(11) NOT NULL 
+        CONSTRAINT CK_tb_staff_info_contact_phone CHECK (contact_phone LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]')
+);
+GO
+
+-- 1.3 执法设备表（tb_law_enforce_device）
+CREATE TABLE tb_law_enforce_device (
+    device_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_law_enforce_device_device_id CHECK (device_id LIKE 'LED-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    device_type VARCHAR(30) NOT NULL 
+        CONSTRAINT CK_tb_law_enforce_device_device_type CHECK (device_type IN ('执法记录仪', '对讲机', 'GPS定位器', '执法终端')),
+    device_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_law_enforce_device_device_status CHECK (device_status IN ('正常', '故障', '离线')),
+    last_check_time DATE NOT NULL
+);
+GO
+
+-- 1.4 科研人员表（tb_researcher_info）
+CREATE TABLE tb_researcher_info (
+    researcher_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_researcher_info_researcher_id CHECK (researcher_id LIKE 'RE-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    researcher_name VARCHAR(20) NOT NULL,
+    affiliated_unit VARCHAR(50) NOT NULL,
+    research_field VARCHAR(30) NOT NULL,
+    contact_info VARCHAR(50) NOT NULL
+);
+GO
+
+-- 1.5 监测设备表（tb_monitor_device）
+CREATE TABLE tb_monitor_device (
+    device_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_monitor_device_device_id CHECK (device_id LIKE 'MD-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    device_type VARCHAR(30) NOT NULL 
+        CONSTRAINT CK_tb_monitor_device_device_type CHECK (device_type IN ('空气质量传感器', '水质监测仪', '土壤湿度传感器', '红外相机', '无人机')),
+    deploy_area_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_monitor_device_deploy_area_id FOREIGN KEY REFERENCES tb_area_info(area_id),
+    install_time DATE NOT NULL,
+    calibration_cycle INT NOT NULL 
+        CONSTRAINT CK_tb_monitor_device_calibration_cycle CHECK (calibration_cycle > 0),
+    running_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_monitor_device_running_status CHECK (running_status IN ('正常', '故障', '离线')),
+    communication_protocol VARCHAR(20) NOT NULL
+);
+GO
+
+-- ==============================================
+-- 二、生物多样性监测业务线
+-- ==============================================
+
+-- 2.1 物种信息表（tb_species_info）
+CREATE TABLE tb_species_info (
+    species_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_species_info_species_id CHECK (species_id LIKE 'SP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    species_name_cn VARCHAR(50) NOT NULL,
+    species_name_latin VARCHAR(100) NOT NULL,
+    species_category VARCHAR(100) NOT NULL,
+    protection_level VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_species_info_protection_level CHECK (protection_level IN ('国家一级', '国家二级', '无')),
+    living_habit TEXT,
+    distribution_range TEXT
+);
+GO
+
+-- 2.2 栖息地信息表（tb_habitat_info）
+CREATE TABLE tb_habitat_info (
+    habitat_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_habitat_info_habitat_id CHECK (habitat_id LIKE 'HT-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    area_name VARCHAR(50) NOT NULL,
+    ecological_type VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_habitat_info_ecological_type CHECK (ecological_type IN ('森林', '湿地', '草原', '荒漠')),
+    area_size DECIMAL(10,2) NOT NULL 
+        CONSTRAINT CK_tb_habitat_info_area_size CHECK (area_size > 0),
+    core_protection_range TEXT NOT NULL,
+    main_species_id VARCHAR(20) 
+        CONSTRAINT FK_tb_habitat_info_main_species_id FOREIGN KEY REFERENCES tb_species_info(species_id),
+    environment_suitability INT NOT NULL 
+        CONSTRAINT CK_tb_habitat_info_environment_suitability CHECK (environment_suitability BETWEEN 1 AND 100)
+);
+GO
+
+-- 2.3 物种-栖息地关联表（tb_habitat_species_rel）
+CREATE TABLE tb_habitat_species_rel (
+    rel_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_habitat_species_rel_rel_id CHECK (rel_id LIKE 'HSR-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    habitat_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_habitat_species_rel_habitat_id FOREIGN KEY REFERENCES tb_habitat_info(habitat_id),
+    species_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_habitat_species_rel_species_id FOREIGN KEY REFERENCES tb_species_info(species_id),
+    distribution_ratio DECIMAL(5,2) NOT NULL 
+        CONSTRAINT CK_tb_habitat_species_rel_distribution_ratio CHECK (distribution_ratio BETWEEN 0 AND 100),
+    CONSTRAINT UK_tb_habitat_species_rel_habitat_species UNIQUE (habitat_id, species_id)
+);
+GO
+
+-- 2.4 监测记录表（tb_monitor_record）
+CREATE TABLE tb_monitor_record (
+    record_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_monitor_record_record_id CHECK (record_id LIKE 'MR-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    species_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_monitor_record_species_id FOREIGN KEY REFERENCES tb_species_info(species_id),
+    device_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_monitor_record_device_id FOREIGN KEY REFERENCES tb_monitor_device(device_id),
+    monitor_time DATETIME NOT NULL,
+    monitor_lng DECIMAL(10,6) NOT NULL,
+    monitor_lat DECIMAL(9,6) NOT NULL,
+    monitor_method VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_monitor_record_monitor_method CHECK (monitor_method IN ('红外相机', '人工巡查', '无人机')),
+    monitor_content TEXT NOT NULL,
+    recorder_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_monitor_record_recorder_id FOREIGN KEY REFERENCES tb_staff_info(staff_id),
+    data_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_monitor_record_data_status CHECK (data_status IN ('有效', '待核实'))
+);
+GO
+
+-- ==============================================
+-- 三、生态环境监测业务线
+-- ==============================================
+
+-- 3.1 监测指标信息表（tb_monitor_index）
+CREATE TABLE tb_monitor_index (
+    index_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_monitor_index_index_id CHECK (index_id LIKE 'MI-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    index_name VARCHAR(30) NOT NULL 
+        CONSTRAINT CK_tb_monitor_index_index_name CHECK (index_name IN ('空气质量', '水质', '土壤湿度', '大气温度', '降水量')),
+    unit VARCHAR(10) NOT NULL,
+    standard_upper DECIMAL(10,2) NULL,
+    standard_lower DECIMAL(10,2) NULL,
+    monitor_frequency VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_monitor_index_monitor_frequency CHECK (monitor_frequency IN ('小时', '日', '周'))
+);
+GO
+
+-- 3.2 环境监测数据表（tb_environment_data）
+CREATE TABLE tb_environment_data (
+    data_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_environment_data_data_id CHECK (data_id LIKE 'ED-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    index_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_environment_data_index_id FOREIGN KEY REFERENCES tb_monitor_index(index_id),
+    device_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_environment_data_device_id FOREIGN KEY REFERENCES tb_monitor_device(device_id),
+    collect_time DATETIME NOT NULL,
+    monitor_value DECIMAL(10,2) NOT NULL,
+    area_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_environment_data_area_id FOREIGN KEY REFERENCES tb_area_info(area_id),
+    data_quality VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_environment_data_data_quality CHECK (data_quality IN ('优', '良', '中', '差'))
+);
+GO
+
+-- ==============================================
+-- 四、游客智能管理业务线
+-- ==============================================
+
+-- 4.1  游客信息表（tb_visitor_info）
+CREATE TABLE tb_visitor_info (
+    visitor_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_visitor_info_visitor_id CHECK (visitor_id LIKE 'VI-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    visitor_name VARCHAR(20) NOT NULL,
+    id_card VARCHAR(18) NOT NULL 
+        CONSTRAINT UK_tb_visitor_info_id_card UNIQUE
+        CONSTRAINT CK_tb_visitor_info_id_card CHECK (id_card LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+    contact_phone VARCHAR(11) NOT NULL 
+        CONSTRAINT CK_tb_visitor_info_contact_phone CHECK (contact_phone LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+    check_in_time DATETIME NULL,
+    check_out_time DATETIME NULL,
+    check_in_method VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_visitor_info_check_in_method CHECK (check_in_method IN ('线上预约', '现场购票'))
+);
+GO
+
+-- 4.2  预约记录表（tb_reservation_record）
+CREATE TABLE tb_reservation_record (
+    reservation_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_reservation_record_reservation_id CHECK (reservation_id LIKE 'RR-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    visitor_id VARCHAR(20) NOT NULL
+        CONSTRAINT FK_tb_reservation_record_visitor_id FOREIGN KEY REFERENCES tb_visitor_info(visitor_id),
+    reservation_date DATE NOT NULL,
+    check_in_period VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_reservation_record_check_in_period CHECK (check_in_period IN ('08:00-10:00', '10:00-12:00', '13:00-15:00', '15:00-17:00')),
+    companion_count INT NOT NULL 
+        CONSTRAINT CK_tb_reservation_record_companion_count CHECK (companion_count >= 1),
+    reservation_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_reservation_record_reservation_status CHECK (reservation_status IN ('已确认', '已取消', '已完成')),
+    ticket_amount DECIMAL(10,2) NOT NULL 
+        CONSTRAINT CK_tb_reservation_record_ticket_amount CHECK (ticket_amount >= 0),
+    payment_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_reservation_record_payment_status CHECK (payment_status IN ('已支付', '未支付', '退款中', '已退款'))
+);
+GO
+
+-- 4.3 游客轨迹数据表（tb_visitor_track）
+CREATE TABLE tb_visitor_track (
+    track_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_visitor_track_track_id CHECK (track_id LIKE 'VT-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    visitor_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_visitor_track_visitor_id FOREIGN KEY REFERENCES tb_visitor_info(visitor_id),
+    locate_time DATETIME NOT NULL,
+    real_time_lng DECIMAL(10,6) NOT NULL,
+    real_time_lat DECIMAL(9,6) NOT NULL,
+    located_area_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_visitor_track_located_area_id FOREIGN KEY REFERENCES tb_area_info(area_id),
+    is_out_of_route TINYINT NOT NULL 
+        CONSTRAINT CK_tb_visitor_track_is_out_of_route CHECK (is_out_of_route IN (0, 1))
+);
+GO
+
+-- 4.5 流量控制信息表（tb_flow_control）
+CREATE TABLE tb_flow_control (
+    area_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT FK_tb_flow_control_area_id FOREIGN KEY REFERENCES tb_area_info(area_id),
+    daily_max_capacity INT NOT NULL 
+        CONSTRAINT CK_tb_flow_control_daily_max_capacity CHECK (daily_max_capacity > 0),
+    real_time_visitor_count INT NOT NULL 
+        CONSTRAINT CK_tb_flow_control_real_time_visitor_count CHECK (real_time_visitor_count >= 0),
+    warning_threshold INT NOT NULL 
+        CONSTRAINT CK_tb_flow_control_warning_threshold CHECK (warning_threshold > 0),
+    current_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_flow_control_current_status CHECK (current_status IN ('正常', '预警', '限流'))
+);
+GO
+
+-- ==============================================
+-- 五、执法监管业务线
+-- ==============================================
+
+-- 5.1 执法人员信息表（tb_law_enforcer）
+CREATE TABLE tb_law_enforcer (
+    enforcer_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_law_enforcer_enforcer_id CHECK (enforcer_id LIKE 'LE-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    enforcer_name VARCHAR(20) NOT NULL,
+    department VARCHAR(30) NOT NULL,
+    enforcement_permission VARCHAR(50) NOT NULL,
+    contact_phone VARCHAR(11) NOT NULL 
+        CONSTRAINT CK_tb_law_enforcer_contact_phone CHECK (contact_phone LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+    law_enforce_device_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_law_enforcer_law_enforce_device_id FOREIGN KEY REFERENCES tb_law_enforce_device(device_id)
+        CONSTRAINT UK_tb_law_enforcer_law_enforce_device_id UNIQUE
+);
+GO
+
+-- 5.2 视频监控点信息表（tb_video_monitor）
+CREATE TABLE tb_video_monitor (
+    monitor_point_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_video_monitor_monitor_point_id CHECK (monitor_point_id LIKE 'VP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    deploy_area_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_video_monitor_deploy_area_id FOREIGN KEY REFERENCES tb_area_info(area_id),
+    install_lng DECIMAL(10,6) NOT NULL,
+    install_lat DECIMAL(9,6) NOT NULL,
+    monitor_range VARCHAR(50) NOT NULL,
+    device_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_video_monitor_device_status CHECK (device_status IN ('正常', '故障')),
+    data_storage_cycle INT NOT NULL 
+        CONSTRAINT CK_tb_video_monitor_data_storage_cycle CHECK (data_storage_cycle IN (90, 180))
+);
+GO
+
+-- 5.3 非法行为记录表（tb_illegal_behavior）
+CREATE TABLE tb_illegal_behavior (
+    behavior_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_illegal_behavior_behavior_id CHECK (behavior_id LIKE 'IB-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    behavior_type VARCHAR(30) NOT NULL 
+        CONSTRAINT CK_tb_illegal_behavior_behavior_type CHECK (behavior_type IN ('非法进入', '盗猎', '破坏植被', '非法采矿', '违规用火')),
+    occur_time DATETIME NOT NULL,
+    occur_area_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_illegal_behavior_occur_area_id FOREIGN KEY REFERENCES tb_area_info(area_id),
+    evidence_path TEXT NOT NULL,
+    handle_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_illegal_behavior_handle_status CHECK (handle_status IN ('未处理', '处理中', '已结案')),
+    enforcer_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_illegal_behavior_enforcer_id FOREIGN KEY REFERENCES tb_law_enforcer(enforcer_id),
+    handle_result TEXT NULL,
+    penalty_basis VARCHAR(100) NOT NULL
+);
+GO
+
+-- 5.4 执法调度信息表（tb_enforcement_dispatch）
+CREATE TABLE tb_enforcement_dispatch (
+    dispatch_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_enforcement_dispatch_dispatch_id CHECK (dispatch_id LIKE 'ED-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    behavior_id VARCHAR(30) NOT NULL 
+        CONSTRAINT FK_tb_enforcement_dispatch_behavior_id FOREIGN KEY REFERENCES tb_illegal_behavior(behavior_id)
+        CONSTRAINT UK_tb_enforcement_dispatch_behavior_id UNIQUE,
+    enforcer_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_enforcement_dispatch_enforcer_id FOREIGN KEY REFERENCES tb_law_enforcer(enforcer_id),
+    dispatch_time DATETIME NOT NULL,
+    response_time DATETIME NULL,
+    handle_complete_time DATETIME NULL,
+    dispatch_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_enforcement_dispatch_dispatch_status CHECK (dispatch_status IN ('待响应', '已派单', '已完成'))
+);
+GO
+
+-- ==============================================
+-- 六、科研数据支撑业务线（核心修正：删除跨列CHECK约束）
+-- ==============================================
+
+-- 6.1 科研项目信息表（tb_research_project）- 修正：删除project_end_date >= project_start_date的CHECK约束
+CREATE TABLE tb_research_project (
+    project_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_research_project_project_id CHECK (project_id LIKE 'RP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    project_name VARCHAR(100) NOT NULL,
+    leader_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_research_project_leader_id FOREIGN KEY REFERENCES tb_researcher_info(researcher_id),
+    application_unit VARCHAR(50) NOT NULL,
+    project_start_date DATE NOT NULL,
+    project_end_date DATE NOT NULL, -- 仅保留非空约束，跨列逻辑通过业务代码控制
+    project_status VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_research_project_project_status CHECK (project_status IN ('在研', '已结题', '暂停')),
+    research_field VARCHAR(30) NOT NULL 
+        CONSTRAINT CK_tb_research_project_research_field CHECK (research_field IN ('物种保护', '生态修复', '环境监测', '生物多样性评估'))
+);
+GO
+
+-- 6.2 科研数据采集记录表（tb_research_data_collect）- 依赖tb_research_project， now可正常创建
+CREATE TABLE tb_research_data_collect (
+    collect_id VARCHAR(30) PRIMARY KEY 
+        CONSTRAINT CK_tb_research_data_collect_collect_id CHECK (collect_id LIKE 'RC-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    project_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_research_data_collect_project_id FOREIGN KEY REFERENCES tb_research_project(project_id),
+    collector_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_research_data_collect_collector_id FOREIGN KEY REFERENCES tb_researcher_info(researcher_id),
+    collect_time DATETIME NOT NULL,
+    collect_area_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_research_data_collect_collect_area_id FOREIGN KEY REFERENCES tb_area_info(area_id),
+    collect_content TEXT NOT NULL,
+    data_source VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_research_data_collect_data_source CHECK (data_source IN ('实地采集', '系统调用'))
+);
+GO
+
+-- 6.3 科研成果信息表（tb_research_achievement）- 依赖tb_research_project， now可正常创建
+CREATE TABLE tb_research_achievement (
+    achievement_id VARCHAR(20) PRIMARY KEY 
+        CONSTRAINT CK_tb_research_achievement_achievement_id CHECK (achievement_id LIKE 'RA-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    project_id VARCHAR(20) NOT NULL 
+        CONSTRAINT FK_tb_research_achievement_project_id FOREIGN KEY REFERENCES tb_research_project(project_id),
+    achievement_type VARCHAR(20) NOT NULL 
+        CONSTRAINT CK_tb_research_achievement_achievement_type CHECK (achievement_type IN ('论文', '报告', '专利', '软件著作权')),
+    achievement_name VARCHAR(100) NOT NULL,
+    publish_submit_time DATE NOT NULL,
+    share_permission VARCHAR(10) NOT NULL 
+        CONSTRAINT CK_tb_research_achievement_share_permission CHECK (share_permission IN ('公开', '内部共享', '保密')),
+    file_path TEXT NOT NULL
+);
+GO

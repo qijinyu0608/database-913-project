@@ -1,0 +1,34 @@
+USE national_park_db;
+GO
+
+SELECT 
+    t.name AS 表名,
+    c.name AS 字段名,
+    ty.name AS 数据类型,  -- 字段的数据类型（如varchar、int、datetime）
+    c.max_length AS 最大长度,  -- 字段最大长度（varchar等类型有效）
+    c.precision AS 精度,  -- 数值类型（如decimal）的精度
+    c.scale AS 小数位数,  -- 数值类型的小数位数
+    -- 判断是否为主键（1=是，0=否）
+    CASE WHEN EXISTS (
+        SELECT 1 
+        FROM sys.key_constraints kc
+        JOIN sys.index_columns ic ON kc.parent_object_id = ic.object_id AND kc.unique_index_id = ic.index_id
+        WHERE kc.type = 'PK' AND kc.parent_object_id = t.object_id AND ic.column_id = c.column_id
+    ) THEN 1 ELSE 0 END AS 是否主键,
+    -- 判断是否为外键（1=是，0=否）
+    CASE WHEN EXISTS (
+        SELECT 1 
+        FROM sys.foreign_key_columns fkc
+        WHERE fkc.parent_object_id = t.object_id AND fkc.parent_column_id = c.column_id
+    ) THEN 1 ELSE 0 END AS 是否外键
+FROM 
+    sys.tables t
+JOIN 
+    sys.columns c ON t.object_id = c.object_id  -- 关联字段信息
+JOIN 
+    sys.types ty ON c.system_type_id = ty.system_type_id  -- 关联数据类型信息
+WHERE 
+    t.type = 'U'
+ORDER BY 
+    t.name, c.column_id;  -- 先按表名排序，再按字段在表中的顺序排序
+GO

@@ -1,0 +1,83 @@
+-- ==============================================
+-- 1. 科研项目信息查询（含负责人关联）
+-- ==============================================
+SELECT
+    project_id,
+    project_name,
+    leader_id,
+    r.researcher_name,
+    application_unit,
+    project_start_date,
+    project_end_date,
+    project_status,
+    p.research_field
+FROM tb_research_project p
+LEFT JOIN tb_researcher_info r 
+    ON p.leader_id = r.researcher_id
+ORDER BY project_status, project_start_date DESC;
+GO
+
+-- ==============================================
+-- 2. 科研数据采集记录查询（含项目+采集人+区域关联）
+-- ==============================================
+SELECT
+    collect_id,
+    c.project_id,
+    p.project_name,
+    collector_id,
+    r.researcher_name,
+    collect_time,
+    c.collect_area_id,
+    a.area_name,
+    a.area_level,
+    collect_content,
+    data_source
+FROM tb_research_data_collect c
+LEFT JOIN tb_research_project p 
+    ON c.project_id = p.project_id
+LEFT JOIN tb_researcher_info r 
+    ON c.collector_id = r.researcher_id
+LEFT JOIN tb_area_info a 
+    ON c.collect_area_id = a.area_id
+ORDER BY collect_time DESC;
+GO
+
+-- ==============================================
+-- 3. 科研成果信息查询（含项目关联）
+-- ==============================================
+SELECT
+    achievement_id,
+    a.project_id,
+    p.project_name,
+    achievement_type,
+    achievement_name,
+    publish_submit_time,
+    share_permission,
+    file_path
+FROM tb_research_achievement a
+LEFT JOIN tb_research_project p 
+    ON a.project_id = p.project_id
+ORDER BY publish_submit_time DESC;
+GO
+
+-- ==============================================
+-- 4. 科研项目全链路关联查询（修复语法错误）
+-- ==============================================
+SELECT
+    p.project_id,
+    p.project_name,
+    r_leader.researcher_name,
+    p.project_status,
+    COUNT(DISTINCT c.collect_id) AS 采集记录总数, 
+    COUNT(DISTINCT a.achievement_id) AS 成果总数,
+    STRING_AGG(ISNULL(a.achievement_type, ''), '、') AS 成果类型
+FROM tb_research_project p
+LEFT JOIN tb_researcher_info r_leader 
+    ON p.leader_id = r_leader.researcher_id
+LEFT JOIN tb_research_data_collect c 
+    ON p.project_id = c.project_id
+LEFT JOIN tb_research_achievement a 
+    ON p.project_id = a.project_id
+GROUP BY p.project_id, p.project_name, r_leader.researcher_name, p.project_status
+ORDER BY p.project_id;
+GO

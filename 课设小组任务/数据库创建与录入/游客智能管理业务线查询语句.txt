@@ -1,0 +1,4 @@
+select * from tb_reservation_record;
+select * from tb_visitor_info;
+select * from tb_visitor_track;
+select * from tb_flow_control;
