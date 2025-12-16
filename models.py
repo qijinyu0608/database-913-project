@@ -1,7 +1,6 @@
 # 文件名: models.py
-from sqlalchemy import Column, String, DateTime, Integer, Numeric, Text, ForeignKey, Date, Boolean, CheckConstraint, \
-    TIMESTAMP, SmallInteger, func
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy import Column, String, DateTime, Integer, Numeric, Text, ForeignKey, Date, Boolean, SmallInteger
+from sqlalchemy.orm import relationship
 from db_config import Base
 
 
@@ -10,7 +9,7 @@ from db_config import Base
 # ==========================================
 
 class AreaInfo(Base):
-    """区域信息表 tb_area_info [cite: 4]"""
+    """区域信息表 tb_area_info"""
     __tablename__ = 'tb_area_info'
     __table_args__ = {'schema': 'dbo'}
     area_id = Column(String(20), primary_key=True, comment='区域编号')
@@ -19,7 +18,6 @@ class AreaInfo(Base):
     area_lng_range = Column(String(50), nullable=False, comment='区域经度范围')
     area_lat_range = Column(String(50), nullable=False, comment='区域纬度范围')
 
-    # 反向关联 (被所有业务线关联) [cite: 108, 113]
     monitors = relationship("MonitorDevice", back_populates="deploy_area")
     environments = relationship("EnvironmentData", back_populates="area_info")
     flow_control = relationship("FlowControl", uselist=False, back_populates="area_info")
@@ -30,7 +28,7 @@ class AreaInfo(Base):
 
 
 class StaffInfo(Base):
-    """工作人员表 tb_staff_info [cite: 8]"""
+    """工作人员表 tb_staff_info"""
     __tablename__ = 'tb_staff_info'
     __table_args__ = {'schema': 'dbo'}
     staff_id = Column(String(20), primary_key=True, comment='工作人员编号')
@@ -39,39 +37,38 @@ class StaffInfo(Base):
     department = Column(String(30), nullable=False, comment='所属部门')
     contact_phone = Column(String(11), nullable=False, comment='联系电话')
 
-    # 关联认证表 (一对一)
+    # 【统一命名】主表的关联属性名为 auth
     auth = relationship("StaffAuth", uselist=False, back_populates="staff")
-
-    # 关联执法人员（隐含身份关联）
     law_enforcer = relationship("LawEnforcer", uselist=False, back_populates="staff_info")
 
 
-class ResearcherInfo(Base):
-    """科研人员表 tb_researcher_info [cite: 16]"""
-    __tablename__ = 'tb_researcher_info'
+class StaffAuth(Base):
+    """员工认证信息表 tb_staff_auth"""
+    __tablename__ = 'tb_staff_auth'
     __table_args__ = {'schema': 'dbo'}
-    researcher_id = Column(String(20), primary_key=True, comment='科研人员编号')
-    researcher_name = Column(String(20), nullable=False, comment='科研人员姓名')
-    affiliated_unit = Column(String(50), nullable=False, comment='所属单位')
-    research_field = Column(String(30), nullable=False, comment='研究领域')
-    contact_info = Column(String(50), nullable=False, comment='联系方式')
+    staff_id = Column(String(20), ForeignKey('dbo.tb_staff_info.staff_id'), primary_key=True, comment='员工编号')
+    password_hash = Column(String(64), nullable=False, comment='密码哈希值')
+    login_fail_count = Column(Integer, default=0, comment='登录失败次数')
+    is_locked = Column(Integer, default=0, comment='账号锁定状态')
+    last_login_time = Column(DateTime, comment='最后一次登录时间')
+
+    # 反向关联指向 StaffInfo.auth
+    staff = relationship("StaffInfo", back_populates="auth")
 
 
 class LawEnforceDevice(Base):
-    """执法设备表 tb_law_enforce_device [cite: 12]"""
+    """执法设备表 tb_law_enforce_device"""
     __tablename__ = 'tb_law_enforce_device'
     __table_args__ = {'schema': 'dbo'}
     device_id = Column(String(20), primary_key=True, comment='执法设备编号')
     device_type = Column(String(30), nullable=False, comment='设备类型')
     device_status = Column(String(10), nullable=False, comment='设备状态')
     last_check_time = Column(Date, nullable=False, comment='上次校验时间')
-
-    # 反向关联
     law_enforcer = relationship("LawEnforcer", uselist=False, back_populates="device_info")
 
 
 class MonitorDevice(Base):
-    """监测设备信息表 tb_monitor_device [cite: 49]"""
+    """监测设备信息表 tb_monitor_device"""
     __tablename__ = 'tb_monitor_device'
     __table_args__ = {'schema': 'dbo'}
     device_id = Column(String(20), primary_key=True, comment='监测设备编号')
@@ -81,21 +78,7 @@ class MonitorDevice(Base):
     calibration_cycle = Column(Integer, nullable=False, comment='校准周期(天)')
     running_status = Column(String(10), nullable=False, comment='运行状态')
     communication_protocol = Column(String(20), nullable=False, comment='通信协议')
-
-    # 关联关系
     deploy_area = relationship("AreaInfo", back_populates="monitors")
-
-
-class StaffAuth(Base):
-    """员工认证信息表 tb_staff_auth [cite: 20]"""
-    __tablename__ = 'tb_staff_auth'
-    __table_args__ = {'schema': 'dbo'}
-    staff_id = Column(String(20), ForeignKey('dbo.tb_staff_info.staff_id'), primary_key=True, comment='员工编号')
-    password_hash = Column(String(64), nullable=False, comment='密码哈希值')
-    login_fail_count = Column(Integer, default=0, comment='登录失败次数')
-    is_locked = Column(Integer, default=0, comment='账号锁定状态')
-    last_login_time = Column(DateTime, comment='最后一次登录时间')
-    staff = relationship("StaffInfo", back_populates="auth")
 
 
 # ==========================================
@@ -103,7 +86,7 @@ class StaffAuth(Base):
 # ==========================================
 
 class SpeciesInfo(Base):
-    """物种信息表 tb_species_info [cite: 24]"""
+    """物种信息表 tb_species_info"""
     __tablename__ = 'tb_species_info'
     __table_args__ = {'schema': 'dbo'}
     species_id = Column(String(20), primary_key=True, comment='物种编号')
@@ -113,13 +96,11 @@ class SpeciesInfo(Base):
     protection_level = Column(String(10), nullable=False, comment='保护级别')
     living_habit = Column(Text, comment='生存习性')
     distribution_range = Column(Text, comment='分布范围描述')
-
-    # 反向关联
     monitor_records = relationship("MonitorRecord", back_populates="species_info")
 
 
 class MonitorRecord(Base):
-    """监测记录表 tb_monitor_record [cite: 28]"""
+    """监测记录表 tb_monitor_record"""
     __tablename__ = 'tb_monitor_record'
     __table_args__ = {'schema': 'dbo'}
     record_id = Column(String(30), primary_key=True, comment='监测记录编号')
@@ -132,15 +113,13 @@ class MonitorRecord(Base):
     monitor_content = Column(Text, nullable=False, comment='监测内容')
     recorder_id = Column(String(20), ForeignKey('dbo.tb_staff_info.staff_id'), comment='记录人编号')
     data_status = Column(String(10), nullable=False, comment='数据状态')
-
-    # 关联关系
     species_info = relationship("SpeciesInfo", back_populates="monitor_records")
     device_info = relationship("MonitorDevice")
     recorder = relationship("StaffInfo", foreign_keys=[recorder_id])
 
 
 class HabitatInfo(Base):
-    """栖息地信息表 tb_habitat_info [cite: 32]"""
+    """栖息地信息表 tb_habitat_info"""
     __tablename__ = 'tb_habitat_info'
     __table_args__ = {'schema': 'dbo'}
     habitat_id = Column(String(20), primary_key=True, comment='栖息地编号')
@@ -148,20 +127,18 @@ class HabitatInfo(Base):
     ecological_type = Column(String(20), nullable=False, comment='生态类型')
     area_size = Column(Numeric(10, 2), nullable=False, comment='栖息地面积')
     core_protection_range = Column(Text, nullable=False, comment='核心保护范围')
-    main_species_id = Column(String(20), ForeignKey('dbo.tb_species_info.species_id'),
-                             comment='主要物种编号')  # 这里的FOREIGN KEY关联逻辑需配合中间表
+    main_species_id = Column(String(20), ForeignKey('dbo.tb_species_info.species_id'), comment='主要物种编号')
     environment_suitability = Column(Integer, nullable=False, comment='环境适宜性评分')
 
 
 class HabitatSpeciesRel(Base):
-    """物种 - 栖息地关联表 tb_habitat_species_rel [cite: 36]"""
+    """物种 - 栖息地关联表 tb_habitat_species_rel"""
     __tablename__ = 'tb_habitat_species_rel'
     __table_args__ = {'schema': 'dbo'}
     rel_id = Column(String(30), primary_key=True, comment='关联记录编号')
     habitat_id = Column(String(20), ForeignKey('dbo.tb_habitat_info.habitat_id'), nullable=False, comment='栖息地编号')
     species_id = Column(String(20), ForeignKey('dbo.tb_species_info.species_id'), nullable=False, comment='物种编号')
     distribution_ratio = Column(Numeric(5, 2), nullable=False, comment='分布占比')
-    # 建立关系
     habitat = relationship("HabitatInfo")
     species = relationship("SpeciesInfo")
 
@@ -171,7 +148,7 @@ class HabitatSpeciesRel(Base):
 # ==========================================
 
 class MonitorIndex(Base):
-    """监测指标信息表 tb_monitor_index [cite: 41]"""
+    """监测指标信息表 tb_monitor_index"""
     __tablename__ = 'tb_monitor_index'
     __table_args__ = {'schema': 'dbo'}
     index_id = Column(String(20), primary_key=True, comment='指标编号')
@@ -183,7 +160,7 @@ class MonitorIndex(Base):
 
 
 class EnvironmentData(Base):
-    """环境监测数据表 tb_environment_data [cite: 45]"""
+    """环境监测数据表 tb_environment_data"""
     __tablename__ = 'tb_environment_data'
     __table_args__ = {'schema': 'dbo'}
     data_id = Column(String(30), primary_key=True, comment='环境数据编号')
@@ -193,8 +170,6 @@ class EnvironmentData(Base):
     monitor_value = Column(Numeric(10, 2), nullable=False, comment='监测值')
     area_id = Column(String(20), ForeignKey('dbo.tb_area_info.area_id'), comment='区域编号')
     data_quality = Column(String(10), nullable=False, comment='数据质量')
-
-    # 关联关系 (用于 Web 界面显示)
     index_info = relationship("MonitorIndex")
     device_info = relationship("MonitorDevice")
     area_info = relationship("AreaInfo", back_populates="environments")
@@ -205,7 +180,7 @@ class EnvironmentData(Base):
 # ==========================================
 
 class VisitorInfo(Base):
-    """游客信息表 tb_visitor_info [cite: 54]"""
+    """游客信息表 tb_visitor_info"""
     __tablename__ = 'tb_visitor_info'
     __table_args__ = {'schema': 'dbo'}
     visitor_id = Column(String(20), primary_key=True, comment='游客编号')
@@ -216,29 +191,45 @@ class VisitorInfo(Base):
     check_out_time = Column(DateTime, comment='离园时间')
     check_in_method = Column(String(20), nullable=False, comment='入园方式')
 
-    # 反向关联
+    # 【统一命名】auth (对应 app.py 中的检查逻辑)
+    auth = relationship("VisitorAuth", uselist=False, back_populates="visitor_info")
     reservation = relationship("ReservationRecord", uselist=False, back_populates="visitor")
 
 
+class VisitorAuth(Base):
+    """游客认证表 tb_visitor_auth"""
+    __tablename__ = 'tb_visitor_auth'
+    __table_args__ = {'schema': 'dbo'}
+    visitor_id = Column(String(30), ForeignKey('dbo.tb_visitor_info.visitor_id'), primary_key=True, comment='游客ID')
+    password_hash = Column(String(64), nullable=False, comment='密码哈希值')
+    login_fail_count = Column(Integer, default=0, comment='登录失败次数')
+    is_locked = Column(Integer, default=0, comment='是否锁定')
+    last_login_time = Column(DateTime, comment='最后登录时间')
+
+    # 【已注释】数据库无此字段，注释以修复报错
+    # account_status = Column(String(10), default='正常', comment='账号状态')
+
+    # 反向关联指向 VisitorInfo.auth
+    visitor_info = relationship("VisitorInfo", back_populates="auth")
+
+
 class ReservationRecord(Base):
-    """预约记录表 tb_reservation_record [cite: 58]"""
+    """预约记录表 tb_reservation_record"""
     __tablename__ = 'tb_reservation_record'
     __table_args__ = {'schema': 'dbo'}
     reservation_id = Column(String(30), primary_key=True, comment='预约记录编号')
-    visitor_id = Column(String(20), ForeignKey('dbo.tb_visitor_info.visitor_id'), comment='游客编号', unique=True)  # 1:1 关系
+    visitor_id = Column(String(20), ForeignKey('dbo.tb_visitor_info.visitor_id'), comment='游客编号', unique=True)
     reservation_date = Column(Date, nullable=False, comment='预约日期')
     check_in_period = Column(String(20), nullable=False, comment='入园时段')
     companion_count = Column(Integer, nullable=False, comment='同行人数')
     reservation_status = Column(String(10), nullable=False, comment='预约状态')
     ticket_amount = Column(Numeric(10, 2), nullable=False, comment='购票金额')
     payment_status = Column(String(10), nullable=False, comment='支付状态')
-
-    # 关联关系
     visitor = relationship("VisitorInfo", back_populates="reservation")
 
 
 class VisitorTrack(Base):
-    """游客轨迹数据表 tb_visitor_track [cite: 62]"""
+    """游客轨迹数据表 tb_visitor_track"""
     __tablename__ = 'tb_visitor_track'
     __table_args__ = {'schema': 'dbo'}
     track_id = Column(String(30), primary_key=True, comment='轨迹记录编号')
@@ -248,14 +239,12 @@ class VisitorTrack(Base):
     real_time_lat = Column(Numeric(9, 6), nullable=False, comment='实时纬度')
     located_area_id = Column(String(20), ForeignKey('dbo.tb_area_info.area_id'), comment='所在区域编号')
     is_out_of_route = Column(SmallInteger, nullable=False, comment='是否超出规定路线')
-
-    # 关联关系
     visitor_info = relationship("VisitorInfo")
     located_area = relationship("AreaInfo", back_populates="visitor_tracks")
 
 
 class FlowControl(Base):
-    """流量控制信息表 tb_flow_control [cite: 66]"""
+    """流量控制信息表 tb_flow_control"""
     __tablename__ = 'tb_flow_control'
     __table_args__ = {'schema': 'dbo'}
     area_id = Column(String(20), ForeignKey('dbo.tb_area_info.area_id'), primary_key=True, comment='区域编号')
@@ -263,7 +252,6 @@ class FlowControl(Base):
     real_time_visitor_count = Column(Integer, nullable=False, comment='实时在园人数')
     warning_threshold = Column(Integer, nullable=False, comment='预警阈值')
     current_status = Column(String(10), nullable=False, comment='当前状态')
-
     area_info = relationship("AreaInfo", back_populates="flow_control")
 
 
@@ -272,24 +260,44 @@ class FlowControl(Base):
 # ==========================================
 
 class LawEnforcer(Base):
-    """执法人员信息表 tb_law_enforcer [cite: 71]"""
+    """执法人员信息表 tb_law_enforcer"""
     __tablename__ = 'tb_law_enforcer'
     __table_args__ = {'schema': 'dbo'}
-    enforcer_id = Column(String(20), ForeignKey('dbo.tb_staff_info.staff_id'), primary_key=True,
-                         comment='执法人员编号')  # 继承 staff_id
+    enforcer_id = Column(String(20), ForeignKey('dbo.tb_staff_info.staff_id'), primary_key=True, comment='执法人员编号')
     enforcer_name = Column(String(20), nullable=False, comment='执法人员姓名')
     department = Column(String(30), nullable=False, comment='所属部门')
     enforcement_permission = Column(String(50), nullable=False, comment='执法权限')
     contact_phone = Column(String(11), nullable=False, comment='联系电话')
-    law_enforce_device_id = Column(String(20), ForeignKey('dbo.tb_law_enforce_device.device_id'), comment='执法设备编号')
+    law_enforce_device_id = Column(String(20), ForeignKey('dbo.tb_law_enforce_device.device_id'),
+                                   comment='执法设备编号')
 
-    # 关联关系
     device_info = relationship("LawEnforceDevice", back_populates="law_enforcer")
     staff_info = relationship("StaffInfo", back_populates="law_enforcer", foreign_keys=[enforcer_id])
 
+    # 【统一命名】auth (之前是 auth_info)
+    auth = relationship("EnforcerAuth", uselist=False, back_populates="enforcer_info")
+
+
+class EnforcerAuth(Base):
+    """执法人员认证表 tb_enforcer_auth"""
+    __tablename__ = 'tb_enforcer_auth'
+    __table_args__ = {'schema': 'dbo'}
+    enforcer_id = Column(String(30), ForeignKey('dbo.tb_law_enforcer.enforcer_id'), primary_key=True,
+                         comment='执法人员ID')
+    password_hash = Column(String(64), nullable=False, comment='密码哈希值')
+    login_fail_count = Column(Integer, default=0, comment='登录失败次数')
+    is_locked = Column(Integer, default=0, comment='是否锁定')
+    last_login_time = Column(DateTime, comment='最后登录时间')
+
+    # 【已注释】数据库无此字段
+    # permission_level = Column(String(20), default='基础', comment='权限等级')
+
+    # 反向关联指向 LawEnforcer.auth
+    enforcer_info = relationship("LawEnforcer", back_populates="auth")
+
 
 class IllegalBehavior(Base):
-    """非法行为记录表 tb_illegal_behavior [cite: 75]"""
+    """非法行为记录表 tb_illegal_behavior"""
     __tablename__ = 'tb_illegal_behavior'
     __table_args__ = {'schema': 'dbo'}
     behavior_id = Column(String(30), primary_key=True, comment='非法行为记录编号')
@@ -301,19 +309,17 @@ class IllegalBehavior(Base):
     enforcer_id = Column(String(20), ForeignKey('dbo.tb_law_enforcer.enforcer_id'), comment='执法人员编号')
     handle_result = Column(Text, comment='处理结果')
     penalty_basis = Column(String(100), nullable=False, comment='处罚依据')
-
-    # 关联关系
     occur_area_info = relationship("AreaInfo", back_populates="illegal_behaviors")
     handling_enforcer = relationship("LawEnforcer", foreign_keys=[enforcer_id])
 
 
 class EnforcementDispatch(Base):
-    """执法调度信息表 tb_enforcement_dispatch [cite: 79]"""
+    """执法调度信息表 tb_enforcement_dispatch"""
     __tablename__ = 'tb_enforcement_dispatch'
     __table_args__ = {'schema': 'dbo'}
     dispatch_id = Column(String(30), primary_key=True, comment='调度记录编号')
     behavior_id = Column(String(30), ForeignKey('dbo.tb_illegal_behavior.behavior_id'), comment='非法行为记录编号',
-                         unique=True)  # 1:1
+                         unique=True)
     enforcer_id = Column(String(20), ForeignKey('dbo.tb_law_enforcer.enforcer_id'), comment='执法人员编号')
     dispatch_time = Column(DateTime, nullable=False, comment='调度时间')
     response_time = Column(DateTime, comment='响应时间')
@@ -322,7 +328,7 @@ class EnforcementDispatch(Base):
 
 
 class VideoMonitor(Base):
-    """视频监控点信息表 tb_video_monitor [cite: 83]"""
+    """视频监控点信息表 tb_video_monitor"""
     __tablename__ = 'tb_video_monitor'
     __table_args__ = {'schema': 'dbo'}
     monitor_point_id = Column(String(20), primary_key=True, comment='监控点编号')
@@ -332,7 +338,6 @@ class VideoMonitor(Base):
     monitor_range = Column(String(50), nullable=False, comment='监控范围')
     device_status = Column(String(10), nullable=False, comment='设备状态')
     data_storage_cycle = Column(Integer, nullable=False, comment='数据存储周期(天)')
-
     deploy_area = relationship("AreaInfo", back_populates="video_monitors")
 
 
@@ -341,7 +346,7 @@ class VideoMonitor(Base):
 # ==========================================
 
 class ResearchProject(Base):
-    """科研项目信息表 tb_research_project [cite: 88]"""
+    """科研项目信息表 tb_research_project"""
     __tablename__ = 'tb_research_project'
     __table_args__ = {'schema': 'dbo'}
     project_id = Column(String(20), primary_key=True, comment='项目编号')
@@ -352,13 +357,11 @@ class ResearchProject(Base):
     project_end_date = Column(Date, nullable=False, comment='结题时间')
     project_status = Column(String(10), nullable=False, comment='项目状态')
     research_field = Column(String(30), nullable=False, comment='研究领域')
-
-    # 关联关系
     leader = relationship("ResearcherInfo")
 
 
 class ResearchDataCollect(Base):
-    """科研数据采集记录表 tb_research_data_collect [cite: 92]"""
+    """科研数据采集记录表 tb_research_data_collect"""
     __tablename__ = 'tb_research_data_collect'
     __table_args__ = {'schema': 'dbo'}
     collect_id = Column(String(30), primary_key=True, comment='采集记录编号')
@@ -368,15 +371,13 @@ class ResearchDataCollect(Base):
     collect_area_id = Column(String(20), ForeignKey('dbo.tb_area_info.area_id'), comment='采集区域编号')
     collect_content = Column(Text, nullable=False, comment='采集内容')
     data_source = Column(String(20), nullable=False, comment='数据来源')
-
-    # 关联关系
     project = relationship("ResearchProject")
     collector = relationship("ResearcherInfo", foreign_keys=[collector_id])
     collect_area = relationship("AreaInfo", back_populates="research_collects")
 
 
 class ResearchAchievement(Base):
-    """科研成果信息表 tb_research_achievement [cite: 96]"""
+    """科研成果信息表 tb_research_achievement"""
     __tablename__ = 'tb_research_achievement'
     __table_args__ = {'schema': 'dbo'}
     achievement_id = Column(String(20), primary_key=True, comment='成果编号')
@@ -386,6 +387,36 @@ class ResearchAchievement(Base):
     publish_submit_time = Column(Date, nullable=False, comment='发表/提交时间')
     share_permission = Column(String(10), nullable=False, comment='共享权限')
     file_path = Column(Text, nullable=False, comment='文件路径')
-
-    # 关联关系
     project = relationship("ResearchProject", foreign_keys=[project_id])
+
+
+class ResearcherInfo(Base):
+    """科研人员表 tb_researcher_info"""
+    __tablename__ = 'tb_researcher_info'
+    __table_args__ = {'schema': 'dbo'}
+    researcher_id = Column(String(20), primary_key=True, comment='科研人员编号')
+    researcher_name = Column(String(20), nullable=False, comment='科研人员姓名')
+    affiliated_unit = Column(String(50), nullable=False, comment='所属单位')
+    research_field = Column(String(30), nullable=False, comment='研究领域')
+    contact_info = Column(String(50), nullable=False, comment='联系方式')
+
+    # 【统一命名】auth (之前是 auth_info)
+    auth = relationship("ResearcherAuth", uselist=False, back_populates="researcher_info")
+
+
+class ResearcherAuth(Base):
+    """科研人员认证表 tb_researcher_auth"""
+    __tablename__ = 'tb_researcher_auth'
+    __table_args__ = {'schema': 'dbo'}
+    researcher_id = Column(String(30), ForeignKey('dbo.tb_researcher_info.researcher_id'), primary_key=True,
+                           comment='科研人员ID')
+    password_hash = Column(String(64), nullable=False, comment='密码哈希值')
+    login_fail_count = Column(Integer, default=0, comment='登录失败次数')
+    is_locked = Column(Integer, default=0, comment='是否锁定')
+    last_login_time = Column(DateTime, comment='最后登录时间')
+
+    # 【已注释】数据库无此字段
+    # data_access_level = Column(String(20), default='普通', comment='数据访问等级')
+
+    # 反向关联指向 ResearcherInfo.auth
+    researcher_info = relationship("ResearcherInfo", back_populates="auth")

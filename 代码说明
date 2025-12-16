@@ -1,0 +1,116 @@
+国家公园智慧管理系统 - 代码与架构说明文档
+1. 项目简介
+本项目是一个基于 Python Flask 框架和 SQL Server 数据库构建的综合性国家公园管理平台。系统集成了生物多样性监测、生态环境感知、游客智能管理、执法监管及科研数据支撑五大核心业务模块 。
+系统采用了 RBAC (基于角色的访问控制) 模型，实现了多角色（系统管理员、生态监测员、游客、执法人员、科研人员等）的分级权限管理与多渠道统一认证登录。
+
+2. 技术栈
+后端框架: Python Flask
+ORM 框架: SQLAlchemy (用于数据库对象映射)
+数据库: Microsoft SQL Server (ODBC Driver 17)
+模板引擎: Jinja2
+前端框架: Bootstrap 5 (UI 响应式布局)
+会话管理: Flask-Session (基于 Server-side Session)
+
+3. 系统架构设计
+3.1 目录结构
+project_root/
+├── app.py              # 核心应用入口：路由、权限控制、登录逻辑
+├── models.py           # 数据库模型定义 (ORM)：映射数据库表结构
+├── dao.py              # 数据访问对象 (DAO)：封装复杂的数据库 CRUD 操作
+├── db_config.py        # 数据库连接配置
+├── static/             # 静态资源 (CSS, JS, Images)
+│   └── style.css       # 全局样式定义
+└── templates/          # HTML 模板文件
+    ├── layout.html     # 全局布局 (导航栏、页脚)
+    ├── login.html      # 统一登录界面
+    ├── index.html      # 首页 (根据角色展示不同入口)
+    ├── tables_overview.html # 通用数据概览页
+    └── [业务模块].html  # 各业务线具体页面 (bio.html, env.html 等)
+
+3.2 数据库设计概览
+系统基于关系型数据库设计，遵循第三范式。核心表结构如下：
+共享基础表: tb_area_info (区域), tb_staff_info (员工), tb_monitor_device (设备) 。
+认证安全体系: 针对不同用户群体建立了独立的认证表，通过一对一关系关联主信息表：
+tb_staff_auth <-> tb_staff_info 
+tb_visitor_auth <-> tb_visitor_info 
+tb_enforcer_auth <-> tb_law_enforcer 
+tb_researcher_auth <-> tb_researcher_info 
+
+4. 核心模块代码说明
+4.1 数据持久层 (models.py)
+使用 SQLAlchemy 定义了所有数据库表的映射类。
+关联关系处理:
+使用了 relationship 和 ForeignKey 定义表间关系 (1:1, 1:N)。
+统一认证接口: 为了适配通用登录逻辑，所有用户主表（如 VisitorInfo, LawEnforcer）指向认证表的关联属性名统一命名为 auth。
+class VisitorInfo(Base):
+    # ... 字段定义 ...
+    # 统一命名为 auth，便于 app.py 动态调用
+    auth = relationship("VisitorAuth", uselist=False, back_populates="visitor_info")
+
+4.2 安全与权限管理 (app.py -> SecurityManager)
+系统实现了一个高度封装的 SecurityManager 类，处理复杂的身份验证。
+多渠道统一登录: login 方法根据用户输入的 ID 前缀自动判断用户类型，并路由到对应的表进行查询：
+ROOT: 超级管理员
+VI-: 游客 (查询 VisitorAuth)
+LE-: 执法人员 (查询 EnforcerAuth)
+RE-: 科研人员 (查询 ResearcherAuth)
+其他: 普通员工（系统管理员，公园管理人员，数据分析师，生态分析师，技术人员） (查询 StaffAuth)
+
+通用认证逻辑 (_authenticate_user): 使用 Python 的 inspect 和 getattr 动态获取模型的主键和属性，实现了用一套代码验证四种不同结构的表。
+RBAC 权限装饰器 (@require_role): 自定义 Flask 装饰器，用于保护路由。它拦截请求，检查 Session 中的 token 有效性以及用户角色是否在允许列表中。
+
+@require_role([ROLE_ADMIN, ROLE_MONITOR])
+def bio_add():
+    # 只有管理员和监测员能访问此函数
+    ...
+
+4.3 全局拦截与上下文注入 (app.py)
+before_request: 实现了全局“看门狗”。除了登录页和静态资源外，所有请求必须携带有效的 Session Token，否则强制重定向到登录页。这也解决了服务器重启后浏览器 Cookie 残留导致的鉴权失效问题。
+
+context_processor: 将 current_user 对象和角色常量 (ROLE_ADMIN 等) 注入到所有 Jinja2 模板中。这使得前端可以直接使用 {% if current_user.role == ROLE_ADMIN %} 来控制菜单和按钮的显示/隐藏。
+
+4.4 业务路由设计
+路由按照五大业务线进行分组：
+
+/tables/<business_line>: 通用数据概览接口。通过字典映射 (BUSINESS_MODELS) 动态加载各业务线下的所有关联表数据。
+/bio (生物多样性): 展示物种、监测记录；支持上传监测数据 (/bio/add)。
+/env (生态环境): 展示环境指标、实时数据；支持数据录入。
+/visitor (游客管理): 游客预约、入园核验、流量管控。
+/law (执法监管): 非法行为上报、执法调度派单。
+/research (科研支撑): 项目立项、数据采集与成果归档。
+
+5. 前端实现说明 (templates/)
+5.1 布局与导航 (layout.html)
+使用 Bootstrap 5 构建响应式导航栏。
+动态菜单: 利用后端注入的 current_user.role，在导航栏中仅渲染当前用户有权访问的模块链接。
+用户状态: 右上角实时显示当前登录的“姓名”与“角色”。
+
+5.2 登录页面 (login.html)
+集成了 CSRF 保护（通过 Flask-WTF 或原生 Form）和 Flash 消息提示（用于显示“密码错误”、“账号锁定”等反馈）。
+使用了自定义 CSS 变量 (--park-green) 确保视觉风格与系统统一。
+
+5.3 首页仪表盘 (index.html)
+采用卡片式布局 (Card) 展示五大业务入口。
+权限感知: 只有用户拥有对应模块权限时，相应的入口卡片才会显示。使用了 justify-content-center 类确保在卡片数量较少时页面依然居中美观。
+
+6. 运行与部署
+环境准备:
+pip install flask sqlalchemy pyodbc
+数据库配置: 修改 db_config.py 中的连接字符串，确保连接到 SQL Server。 注意：需确保数据库中已执行 SQL 脚本，创建了表结构并为 tb_staff_auth 等表预置了哈希加密后的密码。
+
+启动应用:
+python app.py
+访问: 浏览器打开 http://127.0.0.1:5001。
+
+7. 常见问题排查 (Troubleshooting)
+报错 Invalid column name 'account_status':
+原因: 代码模型中定义了该字段，但数据库表中未创建。
+解决: 在 models.py 中注释掉该字段，或在数据库执行 ALTER TABLE 添加该列。
+
+登录提示“用户不存在”但数据库有数据:
+原因: 对应的 *_auth 表中缺失记录，或密码哈希值不匹配。
+解决: 确保主表 (tb_staff_info) 和认证表 (tb_staff_auth) 都有对应的 ID 记录，且认证表中存储的是 SHA-256 加密后的哈希值（而非明文）。
+
+修改代码后登录状态失效:
+原因: 服务器重启导致内存中的 Session 清空。
+解决: 重新登录，系统会自动清理无效的浏览器 Cookie。

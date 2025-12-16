@@ -1,7 +1,9 @@
 import hashlib
 import datetime
 from sqlalchemy.orm import Session
-from models import StaffInfo, StaffAuth
+
+from app import ROLE_VISITOR, ROLE_ENFORCER, ROLE_RESEARCHER
+from models import StaffInfo, StaffAuth, VisitorInfo, LawEnforcer, ResearcherInfo
 
 
 class SecurityManager:
@@ -95,3 +97,105 @@ class SecurityManager:
         if "系统管理员" in current_role:
             return True  # 管理员拥有所有权限
         return current_role in required_roles
+
+    # @staticmethod
+    # def visitor_login(db: Session, visitor_id: str, password: str):
+    #     """游客登录逻辑"""
+    #     visitor = db.query(VisitorInfo).filter(VisitorInfo.visitor_id == visitor_id).first()
+    #     if not visitor:
+    #         return {"success": False, "msg": "游客不存在"}
+    #
+    #     auth = visitor.auth_info
+    #     if not auth:
+    #         return {"success": False, "msg": "未完成认证注册"}
+    #
+    #     if auth.is_locked == 1:
+    #         return {"success": False, "msg": "账号已锁定，请联系管理员"}
+    #
+    #     input_hash = SecurityManager.hash_password(password)
+    #     if auth.password_hash == input_hash:
+    #         # 登录成功处理
+    #         auth.login_fail_count = 0
+    #         auth.last_login_time = datetime.datetime.now()
+    #         db.commit()
+    #
+    #         token = f"token_visitor_{visitor_id}_{datetime.datetime.now().timestamp()}"
+    #         SecurityManager._active_sessions[token] = {
+    #             'user_id': visitor_id,
+    #             'role': ROLE_VISITOR,
+    #             'last_action': datetime.datetime.now()
+    #         }
+    #         return {"success": True, "token": token, "role": ROLE_VISITOR, "name": visitor.visitor_name}
+    #     else:
+    #         # 登录失败处理
+    #         auth.login_fail_count += 1
+    #         msg = f"密码错误，剩余次数：{5 - auth.login_fail_count}"
+    #         if auth.login_fail_count >= 5:
+    #             auth.is_locked = 1
+    #             msg = "密码错误次数过多，账号已锁定"
+    #         db.commit()
+    #         return {"success": False, "msg": msg}
+    #
+    # @staticmethod
+    # def enforcer_login(db: Session, enforcer_id: str, password: str):
+    #     """执法人员登录逻辑"""
+    #     enforcer = db.query(LawEnforcer).filter(LawEnforcer.enforcer_id == enforcer_id).first()
+    #     if not enforcer:
+    #         return {"success": False, "msg": "执法人员不存在"}
+    #
+    #     auth = enforcer.auth_info
+    #     if not auth:
+    #         return {"success": False, "msg": "未配置认证信息"}
+    #
+    #     if auth.is_locked == 1:
+    #         return {"success": False, "msg": "账号已锁定"}
+    #
+    #     input_hash = SecurityManager.hash_password(password)
+    #     if auth.password_hash == input_hash:
+    #         auth.login_fail_count = 0
+    #         auth.last_login_time = datetime.datetime.now()
+    #         db.commit()
+    #
+    #         token = f"token_enforcer_{enforcer_id}_{datetime.datetime.now().timestamp()}"
+    #         SecurityManager._active_sessions[token] = {
+    #             'user_id': enforcer_id,
+    #             'role': ROLE_ENFORCER,
+    #             'permission_level': auth.permission_level,
+    #             'last_action': datetime.datetime.now()
+    #         }
+    #         return {"success": True, "token": token, "role": ROLE_ENFORCER, "name": enforcer.enforcer_name}
+    #     else:
+    #         auth.login_fail_count += 1
+    #         return {"success": False, "msg": f"密码错误，剩余次数：{5 - auth.login_fail_count}"}
+    #
+    # @staticmethod
+    # def researcher_login(db: Session, researcher_id: str, password: str):
+    #     """科研人员登录逻辑"""
+    #     researcher = db.query(ResearcherInfo).filter(ResearcherInfo.researcher_id == researcher_id).first()
+    #     if not researcher:
+    #         return {"success": False, "msg": "科研人员不存在"}
+    #
+    #     auth = researcher.auth_info
+    #     if not auth:
+    #         return {"success": False, "msg": "未配置认证信息"}
+    #
+    #     if auth.is_locked == 1:
+    #         return {"success": False, "msg": "账号已锁定"}
+    #
+    #     input_hash = SecurityManager.hash_password(password)
+    #     if auth.password_hash == input_hash:
+    #         auth.login_fail_count = 0
+    #         auth.last_login_time = datetime.datetime.now()
+    #         db.commit()
+    #
+    #         token = f"token_researcher_{researcher_id}_{datetime.datetime.now().timestamp()}"
+    #         SecurityManager._active_sessions[token] = {
+    #             'user_id': researcher_id,
+    #             'role': ROLE_RESEARCHER,
+    #             'data_access_level': auth.data_access_level,
+    #             'last_action': datetime.datetime.now()
+    #         }
+    #         return {"success": True, "token": token, "role": ROLE_RESEARCHER, "name": researcher.researcher_name}
+    #     else:
+    #         auth.login_fail_count += 1
+    #         return {"success": False, "msg": f"密码错误，剩余次数：{5 - auth.login_fail_count}"}
