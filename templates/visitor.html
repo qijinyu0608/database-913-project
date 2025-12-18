@@ -1,0 +1,214 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-success"><i class="fas fa-users me-2"></i>游客智能管理</h2>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="visTab" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#res-pane">预约记录</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#vis-pane">游客档案</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#track-pane">轨迹数据</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#flow-pane">流量控制</button></li>
+</ul>
+
+<div class="tab-content">
+    <!-- 1. 预约 -->
+    <div class="tab-pane fade show active" id="res-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addResModal', '/visitor/add')">新增预约</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover table-park align-middle">
+                <thead><tr><th>预约号</th><th>游客</th><th>日期</th><th>人数</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for r in reservations %}
+                    <tr>
+                        <td>{{ r.reservation_id }}</td>
+                        <td>{{ r.visitor.visitor_name if r.visitor else r.visitor_id }}</td>
+                        <td>{{ r.reservation_date }}</td>
+                        <td>{{ r.companion_count + 1 }}</td>
+                        <td>{{ r.reservation_status }}</td>
+                        <td>
+                             <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('visitor', 'reservation', '{{ r.reservation_id }}', 'addResModal')">修改</button>
+                            <a href="/visitor/cancel/{{ r.reservation_id }}" class="btn btn-sm btn-outline-warning">取消</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. 游客 -->
+    <div class="tab-pane fade" id="vis-pane">
+         <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addVisModal', '/generic/visitor/visitor/add')">新增游客</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>姓名</th><th>电话</th><th>入园时间</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for v in visitors %}
+                    <tr>
+                        <td>{{ v.visitor_id }}</td>
+                        <td>{{ v.visitor_name }}</td>
+                        <td>{{ v.contact_phone }}</td>
+                        <td>{{ v.check_in_time or '-' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('visitor', 'visitor', '{{ v.visitor_id }}', 'addVisModal')">修改</button>
+                            <a href="/generic/visitor/visitor/delete/{{ v.visitor_id }}" class="btn btn-sm btn-outline-danger">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. 轨迹 -->
+    <div class="tab-pane fade" id="track-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addTrackModal', '/generic/visitor/track/add')">上传轨迹</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>游客</th><th>时间</th><th>位置</th><th>区域</th><th>越界</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for t in tracks %}
+                    <tr>
+                        <td>{{ t.track_id }}</td>
+                        <td>{{ t.visitor_id }}</td>
+                        <td>{{ t.locate_time }}</td>
+                        <td>{{ t.real_time_lng }}, {{ t.real_time_lat }}</td>
+                        <td>{{ t.located_area_id }}</td>
+                        <td>{{ '是' if t.is_out_of_route else '否' }}</td>
+                         <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('visitor', 'track', '{{ t.track_id }}', 'addTrackModal')">修改</button>
+                            <a href="/generic/visitor/track/delete/{{ t.track_id }}" class="btn btn-sm btn-outline-danger">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 4. 流量 -->
+    <div class="tab-pane fade" id="flow-pane">
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>区域</th><th>当前人数</th><th>最大承载</th><th>状态</th></tr></thead>
+                <tbody>
+                    {% for f in flows %}
+                    <tr>
+                        <td>{{ f.area_info.area_name if f.area_info else f.area_id }}</td>
+                        <td>{{ f.real_time_visitor_count }}</td>
+                        <td>{{ f.daily_max_capacity }}</td>
+                        <td><span class="badge {{ 'bg-danger' if f.current_status=='限流' else ('bg-warning' if f.current_status=='预警' else 'bg-success') }}">{{ f.current_status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="addResModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增预约</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/visitor/add" method="POST">
+                <div class="modal-body">
+                    <input name="visitor_id" class="form-control mb-2" placeholder="游客ID" required>
+                    <input name="visitor_name" class="form-control mb-2" placeholder="姓名" required>
+                    <input name="id_card" class="form-control mb-2" placeholder="身份证" required>
+                    <input name="contact_phone" class="form-control mb-2" placeholder="电话" required>
+                    <input name="reservation_id" class="form-control mb-2" placeholder="预约ID (修改时需保持)" required>
+                    <input name="reservation_date" type="date" class="form-control mb-2" required>
+                    <select name="check_in_period" class="form-select mb-2"><option>08:00-12:00</option><option>12:00-16:00</option></select>
+                    <input name="companion_count" type="number" class="form-control mb-2" placeholder="同行人数">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addVisModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增游客</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/visitor/visitor/add" method="POST">
+                <div class="modal-body">
+                    <input name="visitor_id" class="form-control mb-2" placeholder="ID" required>
+                    <input name="visitor_name" class="form-control mb-2" placeholder="姓名" required>
+                    <input name="id_card" class="form-control mb-2" placeholder="身份证" required>
+                    <input name="contact_phone" class="form-control mb-2" placeholder="电话">
+                    <input name="check_in_method" class="form-control mb-2" value="线上预约">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addTrackModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增轨迹点</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/visitor/track/add" method="POST">
+                <div class="modal-body">
+                    <input name="track_id" class="form-control mb-2" placeholder="ID" required>
+                    <select name="visitor_id" class="form-select mb-2">{% for v in visitors %}<option value="{{ v.visitor_id }}">{{ v.visitor_name }}</option>{% endfor %}</select>
+                    <input name="locate_time" type="datetime-local" class="form-control mb-2" required>
+                    <input name="real_time_lng" class="form-control mb-2" placeholder="经度">
+                    <input name="real_time_lat" class="form-control mb-2" placeholder="纬度">
+                    <select name="located_area_id" class="form-select mb-2">{% for a in areas %}<option value="{{ a.area_id }}">{{ a.area_name }}</option>{% endfor %}</select>
+                    <select name="is_out_of_route" class="form-select mb-2"><option value="0">否</option><option value="1">是</option></select>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+        var hash = window.location.hash;
+        if (hash) { var el = document.querySelector('button[data-bs-target="' + hash + '"]'); if(el) new bootstrap.Tab(el).show(); }
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(el => el.addEventListener('shown.bs.tab', e => history.pushState(null, null, e.target.getAttribute('data-bs-target'))));
+    });
+
+    function openAddModal(modalId, actionUrl) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        form.reset();
+        form.action = actionUrl;
+        modalEl.querySelector('.modal-title').textContent = "新增数据";
+        form.querySelectorAll('input, select').forEach(el => el.readOnly = false);
+        new bootstrap.Modal(modalEl).show();
+    }
+
+    function openEditModal(module, key, id, modalId) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        form.reset();
+        
+        fetch(`/generic/${module}/${key}/get/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if(data.error) { alert(data.error); return; }
+                for (const [k, v] of Object.entries(data)) {
+                    let input = form.querySelector(`[name="${k}"]`);
+                    if (input) input.value = v;
+                }
+                let firstInput = form.querySelector('input');
+                if(firstInput) firstInput.readOnly = true;
+
+                form.action = `/generic/${module}/${key}/update`;
+                modalEl.querySelector('.modal-title').textContent = "编辑数据 (ID: " + id + ")";
+                new bootstrap.Modal(modalEl).show();
+            })
+            .catch(err => alert("加载失败: " + err));
+    }
+</script>
+{% endblock %}

@@ -13,6 +13,82 @@ def create_all_tables():
     print("✅ 所有表格创建完成。")
 
 
+class UniversalDAO:
+    """通用 DAO，用于处理基础表的简单的增删改查"""
+    def __init__(self, db: Session):
+        self.db = db
+
+    def add_record(self, model_class, data: dict):
+        """通用新增"""
+        try:
+            # 过滤掉 model_class 不包含的字段 (防止表单提交多余字段导致报错)
+            valid_keys = {c.name for c in model_class.__table__.columns}
+            filtered_data = {k: v for k, v in data.items() if k in valid_keys and v != ''}
+            
+            record = model_class(**filtered_data)
+            self.db.add(record)
+            self.db.commit()
+            return record
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def update_record(self, model_class, pk_value, data: dict):
+        """通用更新"""
+        try:
+            pk_name = model_class.__table__.primary_key.columns.values()[0].name
+            record = self.db.query(model_class).filter(getattr(model_class, pk_name) == pk_value).first()
+            
+            if record:
+                # 过滤掉非模型字段
+                valid_keys = {c.name for c in model_class.__table__.columns}
+                
+                for k, v in data.items():
+                    if k in valid_keys and k != pk_name: # 主键通常不更新
+                        if v == '': v = None # 处理空字符串
+                        setattr(record, k, v)
+                
+                self.db.commit()
+                return True
+            return False
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def get_record_as_dict(self, model_class, pk_value):
+        """通用查询单条记录并转字典"""
+        pk_name = model_class.__table__.primary_key.columns.values()[0].name
+        record = self.db.query(model_class).filter(getattr(model_class, pk_name) == pk_value).first()
+        
+        if record:
+            d = {}
+            for c in model_class.__table__.columns:
+                val = getattr(record, c.name)
+                # 处理日期时间格式化，方便前端 input type="date/datetime-local" 回显
+                if isinstance(val, (datetime.datetime, datetime.date)):
+                    if isinstance(c.type, DateTime):
+                        val = val.strftime('%Y-%m-%dT%H:%M')
+                    else:
+                        val = val.strftime('%Y-%m-%d')
+                d[c.name] = val
+            return d
+        return None
+
+    def delete_record(self, model_class, pk_value):
+        """通用删除"""
+        try:
+            pk_name = model_class.__table__.primary_key.columns.values()[0].name
+            record = self.db.query(model_class).filter(getattr(model_class, pk_name) == pk_value).first()
+            if record:
+                self.db.delete(record)
+                self.db.commit()
+                return True
+            return False
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+
 class BioDiversityDAO:
     """1. 生物多样性监测 DAO (完整 CRUD)"""
 

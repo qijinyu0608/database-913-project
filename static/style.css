@@ -1,0 +1,136 @@
+:root {
+    --park-green: #2E8B57;       /* 海绿色 */
+    --park-dark: #1E5C3B;        /* 深绿 */
+    --park-light: #F0FFF4;       /* 极浅绿背景 */
+    --park-accent: #3CB371;      /* 按钮绿 */
+    --text-main: #2C3E50;
+}
+
+body {
+    background-color: var(--park-light);
+    color: var(--text-main);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 导航栏 */
+.navbar-park {
+    background-color: var(--park-green) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand, .nav-link {
+    color: white !important;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: #d1fae5 !important;
+}
+
+/* 卡片样式 */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header-park {
+    background-color: var(--park-green);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    font-weight: bold;
+}
+
+/* 按钮 */
+.btn-park {
+    background-color: var(--park-green);
+    color: white;
+    border: none;
+}
+
+.btn-park:hover {
+    background-color: var(--park-dark);
+    color: white;
+}
+
+/* 表格 */
+.table-park thead {
+    background-color: #e6fffa;
+    color: var(--park-dark);
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+/* =========================================
+   新增：绿色主题 Tabs 样式
+   ========================================= */
+.nav-tabs {
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-main) !important; /* 覆盖 Bootstrap 默认蓝色 */
+    border: none;
+    font-weight: 500;
+    padding: 0.8rem 1.2rem;
+    transition: all 0.3s ease;
+    margin-right: 5px;
+    border-radius: 8px 8px 0 0;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--park-green) !important;
+    background-color: #e6fffa !important;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--park-green) !important;
+    background-color: white !important;
+    border-bottom: 3px solid var(--park-green) !important;
+    font-weight: bold;
+}
+
+/* =========================================
+   新增：登录页面专用样式
+   ========================================= */
+
+/* 让登录页占满全屏并垂直居中 */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--park-light) 0%, #d1fae5 100%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: white;
+}
+
+.form-control:focus {
+    border-color: var(--park-green);
+    box-shadow: 0 0 0 0.25rem rgba(46, 139, 87, 0.25);
+}
+
+.input-group-text {
+    background-color: #e6fffa;
+    border-color: #ced4da;
+    color: var(--park-dark);
+}
+
+.login-footer {
+    font-size: 0.85rem;
+    color: #6c757d;
+}

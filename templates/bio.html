@@ -1,0 +1,342 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-success"><i class="fas fa-leaf me-2"></i>生物多样性监测中心</h2>
+</div>
+
+<!-- Tabs 导航 -->
+<ul class="nav nav-tabs mb-4" id="bioTab" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#record-pane">监测记录</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#species-pane">物种库</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#habitat-pane">栖息地</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rel-pane">关联关系</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#device-pane">监测设备</button></li>
+</ul>
+
+<!-- Tabs 内容 -->
+<div class="tab-content" id="bioTabContent">
+    
+    <!-- 1. 监测记录 -->
+    <div class="tab-pane fade show active" id="record-pane">
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-park" onclick="openAddModal('addRecordModal', '/generic/bio/record/add')"><i class="fas fa-plus me-1"></i> 新增监测记录</button>
+        </div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover table-park align-middle">
+                <thead><tr><th>记录ID</th><th>物种</th><th>监测方式</th><th>时间</th><th>位置</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr>
+                        <td><small>{{ rec.record_id }}</small></td>
+                        <td>{{ rec.species_info.species_name_cn if rec.species_info else rec.species_id }}</td>
+                        <td>{{ rec.monitor_method }}</td>
+                        <td>{{ rec.monitor_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><small>{{ rec.monitor_lng }}, {{ rec.monitor_lat }}</small></td>
+                        <td><span class="badge bg-secondary">{{ rec.data_status }}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('bio', 'record', '{{ rec.record_id }}', 'addRecordModal')">修改</button>
+                            <a href="/generic/bio/record/delete/{{ rec.record_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('删除不可恢复，确定？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. 物种库 -->
+    <div class="tab-pane fade" id="species-pane">
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-park" onclick="openAddModal('addSpeciesModal', '/generic/bio/species/add')"><i class="fas fa-plus me-1"></i> 新增物种</button>
+        </div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>中文名</th><th>拉丁名</th><th>分类</th><th>保护级别</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for s in species %}
+                    <tr>
+                        <td>{{ s.species_id }}</td>
+                        <td class="fw-bold">{{ s.species_name_cn }}</td>
+                        <td class="fst-italic">{{ s.species_name_latin }}</td>
+                        <td>{{ s.species_category }}</td>
+                        <td>{{ s.protection_level }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('bio', 'species', '{{ s.species_id }}', 'addSpeciesModal')">修改</button>
+                            <a href="/generic/bio/species/delete/{{ s.species_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除该物种？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. 栖息地 -->
+    <div class="tab-pane fade" id="habitat-pane">
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-park" onclick="openAddModal('addHabitatModal', '/generic/bio/habitat/add')"><i class="fas fa-plus me-1"></i> 新增栖息地</button>
+        </div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>区域名</th><th>类型</th><th>面积(ha)</th><th>适宜性</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for h in habitats %}
+                    <tr>
+                        <td>{{ h.habitat_id }}</td>
+                        <td>{{ h.area_name }}</td>
+                        <td>{{ h.ecological_type }}</td>
+                        <td>{{ h.area_size }}</td>
+                        <td>{{ h.environment_suitability }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('bio', 'habitat', '{{ h.habitat_id }}', 'addHabitatModal')">修改</button>
+                            <a href="/generic/bio/habitat/delete/{{ h.habitat_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. 关联关系 -->
+    <div class="tab-pane fade" id="rel-pane">
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-park" onclick="openAddModal('addRelModal', '/generic/bio/rel/add')"><i class="fas fa-plus me-1"></i> 新增关联</button>
+        </div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>栖息地</th><th>物种</th><th>分布占比</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for r in rels %}
+                    <tr>
+                        <td>{{ r.rel_id }}</td>
+                        <td>{{ r.habitat.area_name if r.habitat else r.habitat_id }}</td>
+                        <td>{{ r.species.species_name_cn if r.species else r.species_id }}</td>
+                        <td>{{ r.distribution_ratio }}%</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('bio', 'rel', '{{ r.rel_id }}', 'addRelModal')">修改</button>
+                            <a href="/generic/bio/rel/delete/{{ r.rel_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. 监测设备 -->
+    <div class="tab-pane fade" id="device-pane">
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-park" onclick="openAddModal('addDeviceModal', '/generic/bio/device/add')"><i class="fas fa-plus me-1"></i> 新增设备</button>
+        </div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>类型</th><th>状态</th><th>安装时间</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for d in devices %}
+                    <tr>
+                        <td>{{ d.device_id }}</td>
+                        <td>{{ d.device_type }}</td>
+                        <td>{{ d.running_status }}</td>
+                        <td>{{ d.install_time }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('bio', 'device', '{{ d.device_id }}', 'addDeviceModal')">修改</button>
+                            <a href="/generic/bio/device/delete/{{ d.device_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modals -->
+
+<!-- Record Modal -->
+<div class="modal fade" id="addRecordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增监测记录</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/bio/record/add" method="POST">
+                <div class="modal-body">
+                    <input type="text" name="record_id" class="form-control mb-2" placeholder="ID (MR-xxx)" required>
+                    <select name="species_id" class="form-select mb-2">{% for s in species %}<option value="{{ s.species_id }}">{{ s.species_name_cn }}</option>{% endfor %}</select>
+                    <select name="device_id" class="form-select mb-2">{% for d in devices %}<option value="{{ d.device_id }}">{{ d.device_type }}</option>{% endfor %}</select>
+                    <input type="datetime-local" name="monitor_time" class="form-control mb-2" required>
+                    <input type="text" name="monitor_lng" class="form-control mb-2" placeholder="经度">
+                    <input type="text" name="monitor_lat" class="form-control mb-2" placeholder="纬度">
+                    <input type="text" name="monitor_method" class="form-control mb-2" placeholder="监测方式">
+                    <textarea name="monitor_content" class="form-control mb-2" placeholder="内容"></textarea>
+                    <input type="hidden" name="data_status" value="待核实">
+                    <input type="hidden" name="recorder_id" value="STAFF-2025-0001">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交保存</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Species Modal -->
+<div class="modal fade" id="addSpeciesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增物种</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/bio/species/add" method="POST">
+                <div class="modal-body">
+                    <input type="text" name="species_id" class="form-control mb-2" placeholder="ID (SP-xxx)" required>
+                    <input type="text" name="species_name_cn" class="form-control mb-2" placeholder="中文名" required>
+                    <input type="text" name="species_name_latin" class="form-control mb-2" placeholder="拉丁名" required>
+                    <input type="text" name="species_category" class="form-control mb-2" placeholder="分类" required>
+                    <select name="protection_level" class="form-select mb-2"><option>一级</option><option>二级</option><option>三级</option><option>无</option></select>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交保存</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Habitat Modal -->
+<div class="modal fade" id="addHabitatModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增栖息地</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/bio/habitat/add" method="POST">
+                <div class="modal-body">
+                    <input type="text" name="habitat_id" class="form-control mb-2" placeholder="ID (HB-xxx)" required>
+                    <input type="text" name="area_name" class="form-control mb-2" placeholder="区域名" required>
+                    <input type="text" name="ecological_type" class="form-control mb-2" placeholder="类型" required>
+                    <input type="number" name="area_size" class="form-control mb-2" placeholder="面积" required>
+                    <input type="number" name="environment_suitability" class="form-control mb-2" placeholder="评分" required>
+                    <textarea name="core_protection_range" class="form-control mb-2" placeholder="保护范围"></textarea>
+                    <select name="main_species_id" class="form-select mb-2">{% for s in species %}<option value="{{ s.species_id }}">{{ s.species_name_cn }}</option>{% endfor %}</select>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交保存</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Rel Modal -->
+<div class="modal fade" id="addRelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增关联</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/bio/rel/add" method="POST">
+                <div class="modal-body">
+                    <input type="text" name="rel_id" class="form-control mb-2" placeholder="ID (HS-xxx)" required>
+                    <label>栖息地</label>
+                    <select name="habitat_id" class="form-select mb-2">{% for h in habitats %}<option value="{{ h.habitat_id }}">{{ h.area_name }}</option>{% endfor %}</select>
+                    <label>物种</label>
+                    <select name="species_id" class="form-select mb-2">{% for s in species %}<option value="{{ s.species_id }}">{{ s.species_name_cn }}</option>{% endfor %}</select>
+                    <input type="number" name="distribution_ratio" class="form-control mb-2" placeholder="占比 (%)" required>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交保存</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Device Modal -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增设备</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/bio/device/add" method="POST">
+                <div class="modal-body">
+                    <input type="text" name="device_id" class="form-control mb-2" placeholder="ID (MD-xxx)" required>
+                    <input type="text" name="device_type" class="form-control mb-2" placeholder="类型" required>
+                    <label class="form-label ms-1 small text-muted">部署区域</label>
+                    <select name="deploy_area_id" class="form-select mb-2">
+                        {% for a in areas %}
+                        <option value="{{ a.area_id }}">{{ a.area_name }} ({{ a.area_id }})</option>
+                        {% endfor %}
+                    </select>
+                    <label class="form-label ms-1 small text-muted">安装时间</label>
+                    <input type="date" name="install_time" class="form-control mb-2" required>
+                    <input type="number" name="calibration_cycle" class="form-control mb-2" placeholder="周期(天)" required>
+                    <input type="text" name="communication_protocol" class="form-control mb-2" placeholder="通信协议" required>
+                    <input type="text" name="running_status" class="form-control mb-2" value="正常" readonly>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交保存</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 页面加载时的 Tab 记忆
+    document.addEventListener("DOMContentLoaded", function(){
+        var hash = window.location.hash;
+        if (hash) {
+            var triggerEl = document.querySelector('button[data-bs-target="' + hash + '"]')
+            if (triggerEl) { new bootstrap.Tab(triggerEl).show() }
+        }
+        var tabElList = [].slice.call(document.querySelectorAll('button[data-bs-toggle="tab"]'))
+        tabElList.forEach(function (tabEl) {
+            tabEl.addEventListener('shown.bs.tab', function (event) {
+                history.pushState(null, null, event.target.getAttribute('data-bs-target'));
+            })
+        })
+    });
+
+    // 打开新增模态框：重置表单
+    function openAddModal(modalId, actionUrl) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        form.reset();
+        form.action = actionUrl;
+        modalEl.querySelector('.modal-title').textContent = "新增数据";
+        // 移除所有只读属性
+        form.querySelectorAll('input, select, textarea').forEach(el => {
+            // 特殊字段如 running_status 默认只读的除外
+            if(el.name !== 'running_status' && el.name !== 'data_status' && el.name !== 'recorder_id') {
+                el.readOnly = false;
+            }
+        });
+        new bootstrap.Modal(modalEl).show();
+    }
+
+    // 打开编辑模态框：获取数据并填充
+    function openEditModal(module, key, id, modalId) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        
+        // 先重置一下，防止残留
+        form.reset();
+        
+        fetch(`/generic/${module}/${key}/get/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error("网络响应异常");
+                return res.json();
+            })
+            .then(data => {
+                if(data.error) { alert(data.error); return; }
+                
+                // 填充表单
+                for (const [k, v] of Object.entries(data)) {
+                    let input = form.querySelector(`[name="${k}"]`);
+                    if (input) {
+                        input.value = v;
+                    }
+                }
+                
+                // 设置只读：主键 ID
+                let firstInput = form.querySelector('input');
+                if(firstInput) firstInput.readOnly = true;
+
+                // 设置 Action
+                form.action = `/generic/${module}/${key}/update`;
+                modalEl.querySelector('.modal-title').textContent = "编辑数据 (ID: " + id + ")";
+                
+                new bootstrap.Modal(modalEl).show();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("无法加载数据，请检查控制台日志。\n" + err);
+            });
+    }
+</script>
+{% endblock %}

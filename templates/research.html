@@ -1,0 +1,239 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-success"><i class="fas fa-flask me-2"></i>科研支撑</h2>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="resTab" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#proj-pane">科研项目</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#coll-pane">采集记录</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ach-pane">科研成果</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#reser-pane">科研人员</button></li>
+</ul>
+
+<div class="tab-content">
+    <!-- 1. 项目 -->
+    <div class="tab-pane fade show active" id="proj-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addProjModal', '/research/add')">立项</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover table-park align-middle">
+                <thead><tr><th>ID</th><th>名称</th><th>领域</th><th>负责人</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for p in projects %}
+                    <tr>
+                        <td>{{ p.project_id }}</td>
+                        <td>{{ p.project_name }}</td>
+                        <td>{{ p.research_field }}</td>
+                        <td>{{ p.leader_id }}</td>
+                        <td>{{ p.project_status }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('research', 'project', '{{ p.project_id }}', 'addProjModal')">修改</button>
+                            <a href="/generic/research/project/delete/{{ p.project_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('删？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. 采集 -->
+    <div class="tab-pane fade" id="coll-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addCollModal', '/generic/research/collect/add')">采集数据</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>项目</th><th>采集人</th><th>时间</th><th>区域</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for c in collects %}
+                    <tr>
+                        <td>{{ c.collect_id }}</td>
+                        <td>{{ c.project.project_name if c.project else c.project_id }}</td>
+                        <td>{{ c.collector_id }}</td>
+                        <td>{{ c.collect_time }}</td>
+                        <td>{{ c.collect_area_id }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('research', 'collect', '{{ c.collect_id }}', 'addCollModal')">修改</button>
+                            <a href="/generic/research/collect/delete/{{ c.collect_id }}" class="btn btn-sm btn-outline-danger">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. 成果 -->
+    <div class="tab-pane fade" id="ach-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addAchModal', '/generic/research/achievement/add')">上传成果</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>名称</th><th>类型</th><th>提交时间</th><th>权限</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for a in achievements %}
+                    <tr>
+                        <td>{{ a.achievement_id }}</td>
+                        <td>{{ a.achievement_name }}</td>
+                        <td>{{ a.achievement_type }}</td>
+                        <td>{{ a.publish_submit_time }}</td>
+                        <td>{{ a.share_permission }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('research', 'achievement', '{{ a.achievement_id }}', 'addAchModal')">修改</button>
+                            <a href="/generic/research/achievement/delete/{{ a.achievement_id }}" class="btn btn-sm btn-outline-danger">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 4. 人员 -->
+    <div class="tab-pane fade" id="reser-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addReserModal', '/generic/research/researcher/add')">新增人员</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>姓名</th><th>单位</th><th>领域</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for r in researchers %}
+                    <tr>
+                        <td>{{ r.researcher_id }}</td>
+                        <td>{{ r.researcher_name }}</td>
+                        <td>{{ r.affiliated_unit }}</td>
+                        <td>{{ r.research_field }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('research', 'researcher', '{{ r.researcher_id }}', 'addReserModal')">修改</button>
+                            <a href="/generic/research/researcher/delete/{{ r.researcher_id }}" class="btn btn-sm btn-outline-danger">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="addProjModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">立项</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/research/add" method="POST">
+                <div class="modal-body">
+                    <input name="project_id" class="form-control mb-2" placeholder="ID" required>
+                    <input name="project_name" class="form-control mb-2" placeholder="名称" required>
+                    <select name="leader_id" class="form-select mb-2">{% for r in researchers %}<option value="{{ r.researcher_id }}">{{ r.researcher_name }}</option>{% endfor %}</select>
+                    <input name="application_unit" class="form-control mb-2" placeholder="单位">
+                    <input name="research_field" class="form-control mb-2" placeholder="领域">
+                    <input name="project_start_date" type="date" class="form-control mb-2" required>
+                    <input name="project_end_date" type="date" class="form-control mb-2" required>
+                    <input name="project_status" class="form-control mb-2" value="在研" readonly>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addCollModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">采集数据</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/research/collect/add" method="POST">
+                <div class="modal-body">
+                    <input name="collect_id" class="form-control mb-2" placeholder="ID" required>
+                    <select name="project_id" class="form-select mb-2">{% for p in projects %}<option value="{{ p.project_id }}">{{ p.project_name }}</option>{% endfor %}</select>
+                    <select name="collector_id" class="form-select mb-2">{% for r in researchers %}<option value="{{ r.researcher_id }}">{{ r.researcher_name }}</option>{% endfor %}</select>
+                    <select name="collect_area_id" class="form-select mb-2">{% for a in areas %}<option value="{{ a.area_id }}">{{ a.area_name }}</option>{% endfor %}</select>
+                    <input name="collect_time" type="datetime-local" class="form-control mb-2" required>
+                    <textarea name="collect_content" class="form-control mb-2" placeholder="内容"></textarea>
+                    <input name="data_source" class="form-control mb-2" value="实地">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addAchModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">上传成果</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/research/achievement/add" method="POST">
+                <div class="modal-body">
+                    <input name="achievement_id" class="form-control mb-2" placeholder="ID" required>
+                    <select name="project_id" class="form-select mb-2">{% for p in projects %}<option value="{{ p.project_id }}">{{ p.project_name }}</option>{% endfor %}</select>
+                    <input name="achievement_name" class="form-control mb-2" placeholder="名称" required>
+                    <input name="achievement_type" class="form-control mb-2" placeholder="类型">
+                    <input name="publish_submit_time" type="date" class="form-control mb-2" required>
+                    <input name="share_permission" class="form-control mb-2" value="公开">
+                    <input name="file_path" class="form-control mb-2" value="/doc/">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addReserModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增人员</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/research/researcher/add" method="POST">
+                <div class="modal-body">
+                    <input name="researcher_id" class="form-control mb-2" placeholder="ID" required>
+                    <input name="researcher_name" class="form-control mb-2" placeholder="姓名" required>
+                    <input name="affiliated_unit" class="form-control mb-2" placeholder="单位">
+                    <input name="research_field" class="form-control mb-2" placeholder="领域">
+                    <input name="contact_info" class="form-control mb-2" placeholder="联系">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+        var hash = window.location.hash;
+        if (hash) { var el = document.querySelector('button[data-bs-target="' + hash + '"]'); if(el) new bootstrap.Tab(el).show(); }
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(el => el.addEventListener('shown.bs.tab', e => history.pushState(null, null, e.target.getAttribute('data-bs-target'))));
+    });
+
+    function openAddModal(modalId, actionUrl) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        form.reset();
+        form.action = actionUrl;
+        modalEl.querySelector('.modal-title').textContent = "新增数据";
+        form.querySelectorAll('input, select').forEach(el => el.readOnly = false);
+        new bootstrap.Modal(modalEl).show();
+    }
+
+    function openEditModal(module, key, id, modalId) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        form.reset();
+        
+        fetch(`/generic/${module}/${key}/get/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if(data.error) { alert(data.error); return; }
+                for (const [k, v] of Object.entries(data)) {
+                    let input = form.querySelector(`[name="${k}"]`);
+                    if (input) input.value = v;
+                }
+                let firstInput = form.querySelector('input');
+                if(firstInput) firstInput.readOnly = true;
+
+                form.action = `/generic/${module}/${key}/update`;
+                modalEl.querySelector('.modal-title').textContent = "编辑数据 (ID: " + id + ")";
+                new bootstrap.Modal(modalEl).show();
+            })
+            .catch(err => alert("加载失败: " + err));
+    }
+</script>
+{% endblock %}

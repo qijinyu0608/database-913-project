@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - 国家公园管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="login-container">
+
+        <div class="card login-card shadow-lg">
+
+            <div class="card-header card-header-park text-center py-4">
+                <h3 class="mb-0"><i class="fas fa-tree me-2"></i>智慧管理平台</h3>
+                <small class="opacity-75">National Park System</small>
+            </div>
+
+            <div class="card-body p-4">
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-info-circle me-1"></i> {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="/login" method="POST">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-success">账号 / 工号</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" name="staff_id" class="form-control" placeholder="请输入工号 (如 root)" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-success">密码</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" name="password" class="form-control" placeholder="请输入密码" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-park btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>立即登录
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="card-footer text-center bg-light py-3 border-0 rounded-bottom">
+                <div class="login-footer">
+                    &copy; 2025 National Park Intelligent System<br>
+                    <small>系统仅限内部人员使用</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

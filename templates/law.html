@@ -1,0 +1,233 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-success"><i class="fas fa-gavel me-2"></i>执法监管</h2>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="lawTab" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#behav-pane">违法行为</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#disp-pane">调度单</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#enf-pane">执法人员</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#dev-pane">执法设备</button></li>
+</ul>
+
+<div class="tab-content">
+    <!-- 1. 行为 -->
+    <div class="tab-pane fade show active" id="behav-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addBehavModal', '/law/add')">上报行为</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover table-park align-middle">
+                <thead><tr><th>ID</th><th>类型</th><th>时间</th><th>区域</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for b in behaviors %}
+                    <tr>
+                        <td>{{ b.behavior_id }}</td>
+                        <td>{{ b.behavior_type }}</td>
+                        <td>{{ b.occur_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ b.occur_area_id }}</td>
+                        <td>{{ b.handle_status }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('law', 'behavior', '{{ b.behavior_id }}', 'addBehavModal')">修改</button>
+                            <a href="/generic/law/behavior/delete/{{ b.behavior_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('删？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. 调度 -->
+    <div class="tab-pane fade" id="disp-pane">
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>关联行为</th><th>执法员</th><th>时间</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for d in dispatches %}
+                    <tr>
+                        <td>{{ d.dispatch_id }}</td>
+                        <td>{{ d.behavior_id }}</td>
+                        <td>{{ d.enforcer_id }}</td>
+                        <td>{{ d.dispatch_time }}</td>
+                        <td>{{ d.dispatch_status }}</td>
+                         <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('law', 'dispatch', '{{ d.dispatch_id }}', 'addDispModal')">修改</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. 人员 -->
+    <div class="tab-pane fade" id="enf-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addEnfModal', '/generic/law/enforcer/add')">新增人员</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>姓名</th><th>部门</th><th>电话</th><th>设备</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for e in enforcers %}
+                    <tr>
+                        <td>{{ e.enforcer_id }}</td>
+                        <td>{{ e.enforcer_name }}</td>
+                        <td>{{ e.department }}</td>
+                        <td>{{ e.contact_phone }}</td>
+                        <td>{{ e.law_enforce_device_id }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('law', 'enforcer', '{{ e.enforcer_id }}', 'addEnfModal')">修改</button>
+                            <a href="/generic/law/enforcer/delete/{{ e.enforcer_id }}" class="btn btn-sm btn-outline-danger">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 4. 设备 -->
+    <div class="tab-pane fade" id="dev-pane">
+        <div class="d-flex justify-content-end mb-3"><button class="btn btn-park" onclick="openAddModal('addDevModal', '/generic/law/device/add')">新增设备</button></div>
+        <div class="card p-3 shadow-sm border-0">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>ID</th><th>类型</th><th>状态</th><th>校验时间</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for d in devices %}
+                    <tr>
+                        <td>{{ d.device_id }}</td>
+                        <td>{{ d.device_type }}</td>
+                        <td>{{ d.device_status }}</td>
+                        <td>{{ d.last_check_time }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('law', 'device', '{{ d.device_id }}', 'addDevModal')">修改</button>
+                            <a href="/generic/law/device/delete/{{ d.device_id }}" class="btn btn-sm btn-outline-danger">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="addBehavModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">上报行为</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/law/add" method="POST"> 
+                <div class="modal-body">
+                    <input name="behavior_id" class="form-control mb-2" placeholder="ID" required>
+                    <select name="behavior_type" class="form-select mb-2"><option>盗猎</option><option>破坏</option><option>其他</option></select>
+                    <select name="occur_area_id" class="form-select mb-2">{% for a in areas %}<option value="{{ a.area_id }}">{{ a.area_name }}</option>{% endfor %}</select>
+                    <select name="enforcer_id" class="form-select mb-2">{% for e in enforcers %}<option value="{{ e.enforcer_id }}">{{ e.enforcer_name }}</option>{% endfor %}</select>
+                    <input name="occur_time" type="datetime-local" class="form-control mb-2" required>
+                    <input name="evidence_path" class="form-control mb-2" value="/default">
+                    <input name="penalty_basis" class="form-control mb-2" placeholder="依据">
+                    <input name="handle_status" class="form-control mb-2" placeholder="状态">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Dispatch Modal (Generic Edit Only) -->
+<div class="modal fade" id="addDispModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">调度单</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/law/dispatch/update" method="POST">
+                <div class="modal-body">
+                    <input name="dispatch_id" class="form-control mb-2" placeholder="ID" readonly>
+                    <input name="dispatch_status" class="form-control mb-2" placeholder="状态">
+                    <input name="response_time" type="datetime-local" class="form-control mb-2">
+                    <input name="handle_complete_time" type="datetime-local" class="form-control mb-2">
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addEnfModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增执法人员</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/law/enforcer/add" method="POST">
+                <div class="modal-body">
+                    <input name="enforcer_id" class="form-control mb-2" placeholder="ID" required>
+                    <input name="enforcer_name" class="form-control mb-2" placeholder="姓名" required>
+                    <input name="department" class="form-control mb-2" placeholder="部门" required>
+                    <input name="contact_phone" class="form-control mb-2" placeholder="电话">
+                    <input name="enforcement_permission" class="form-control mb-2" value="一般执法">
+                    <select name="law_enforce_device_id" class="form-select mb-2">{% for d in devices %}<option value="{{ d.device_id }}">{{ d.device_type }} ({{ d.device_id }})</option>{% endfor %}</select>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addDevModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header card-header-park"><h5 class="modal-title">新增设备</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form action="/generic/law/device/add" method="POST">
+                <div class="modal-body">
+                    <input name="device_id" class="form-control mb-2" placeholder="ID" required>
+                    <input name="device_type" class="form-control mb-2" placeholder="类型">
+                    <input name="device_status" class="form-control mb-2" value="正常">
+                    <input name="last_check_time" type="date" class="form-control mb-2" required>
+                </div>
+                <div class="modal-footer"><button class="btn btn-park">提交</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+        var hash = window.location.hash;
+        if (hash) { var el = document.querySelector('button[data-bs-target="' + hash + '"]'); if(el) new bootstrap.Tab(el).show(); }
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(el => el.addEventListener('shown.bs.tab', e => history.pushState(null, null, e.target.getAttribute('data-bs-target'))));
+    });
+
+    function openAddModal(modalId, actionUrl) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        form.reset();
+        form.action = actionUrl;
+        modalEl.querySelector('.modal-title').textContent = "新增数据";
+        form.querySelectorAll('input, select').forEach(el => el.readOnly = false);
+        new bootstrap.Modal(modalEl).show();
+    }
+
+    function openEditModal(module, key, id, modalId) {
+        var modalEl = document.getElementById(modalId);
+        var form = modalEl.querySelector('form');
+        form.reset();
+        
+        fetch(`/generic/${module}/${key}/get/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if(data.error) { alert(data.error); return; }
+                for (const [k, v] of Object.entries(data)) {
+                    let input = form.querySelector(`[name="${k}"]`);
+                    if (input) input.value = v;
+                }
+                let firstInput = form.querySelector('input');
+                if(firstInput) firstInput.readOnly = true;
+
+                form.action = `/generic/${module}/${key}/update`;
+                modalEl.querySelector('.modal-title').textContent = "编辑数据 (ID: " + id + ")";
+                new bootstrap.Modal(modalEl).show();
+            })
+            .catch(err => alert("加载失败: " + err));
+    }
+</script>
+{% endblock %}

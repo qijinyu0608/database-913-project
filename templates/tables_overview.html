@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-6 text-success fw-bold"><i class="fas fa-list-alt me-2"></i>{{ title }}</h1>
+
+        <div>
+            {% if business_line == 'bio' %}
+                <a href="/bio" class="btn btn-park"><i class="fas fa-edit me-1"></i>进入 生物多样性管理 (增删改)</a>
+            {% elif business_line == 'env' %}
+                <a href="/env" class="btn btn-park"><i class="fas fa-edit me-1"></i>进入 生态环境管理 (增删改)</a>
+            {% elif business_line == 'visitor' %}
+                 <a href="/visitor" class="btn btn-park"><i class="fas fa-edit me-1"></i>进入 游客预约管理 (增删改)</a>
+            {% elif business_line == 'law' %}
+                 <a href="/law" class="btn btn-park"><i class="fas fa-edit me-1"></i>进入 执法案件管理 (增删改)</a>
+            {% elif business_line == 'research' %}
+                 <a href="/research" class="btn btn-park"><i class="fas fa-edit me-1"></i>进入 科研项目管理 (增删改)</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="alert alert-light border-start border-4 border-success shadow-sm mb-4">
+        <i class="fas fa-info-circle text-success me-2"></i>
+        下方展示了属于该业务线的所有数据表（只读模式）。如需录入或删除数据，请点击右上角按钮。
+    </div>
+</div>
+
+{% for table_name, data in all_data.items() %}
+<div class="card shadow-sm mb-5">
+    <div class="card-header card-header-park">
+        <h4 class="mb-0">{{ table_name }} ({{ data.records|length }} 条记录)</h4>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-striped table-bordered table-sm mb-0 align-middle">
+                <thead class="table-park sticky-top">
+                    <tr>
+                        {% for header in data.headers %}
+                        <th style="white-space: nowrap;">{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if data.records|length == 0 and data.headers|length > 1 %}
+                        <tr>
+                            <td colspan="{{ data.headers|length }}" class="text-center text-muted py-3">该表暂无数据。</td>
+                        </tr>
+                    {% elif data.headers|first == "错误" %}
+                        <tr>
+                            <td colspan="10" class="text-center text-danger py-3">数据加载失败：{{ data.records[0].错误 }}</td>
+                        </tr>
+                    {% else %}
+                        {% for record in data.records %}
+                        <tr>
+                            {% for header in data.headers %}
+                            <td>
+                                {% set value = record[header] %}
+
+                                {% if value is string and value|length > 50 %}
+                                    <span title="{{ value }}">{{ value[:50] }}...</span>
+                                {% elif value is none %}
+                                    <span class="text-muted">-</span>
+                                {% elif value is datetime %}
+                                    {{ value.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% elif value is date %}
+                                    {{ value.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

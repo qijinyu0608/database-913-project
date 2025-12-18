@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-5 text-success fw-bold mb-3">欢迎进入国家公园智慧管理平台</h1>
+    <p class="lead text-muted">Intelligent Management System for National Parks</p>
+
+</div>
+
+<div class="row g-4">
+    {% if current_user.role in [ROLE_ADMIN, ROLE_MONITOR, ROLE_ANALYST, ROLE_PARK_MANAGER, ROLE_TECHNICIAN, ROLE_RESEARCHER] %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center p-5">
+                <i class="fas fa-paw fa-3x text-success mb-3"></i>
+                <h3 class="card-title">生态多样性监测</h3>
+                <p class="card-text">物种分布、红外相机监测记录管理。</p>
+                <a href="/tables/bio" class="btn btn-outline-success stretched-link">进入管理</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role in [ROLE_ADMIN, ROLE_ANALYST, ROLE_RESEARCHER, ROLE_TECHNICIAN, ROLE_PARK_MANAGER] %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center p-5">
+                <i class="fas fa-wind fa-3x text-success mb-3"></i>
+                <h3 class="card-title">生态环境监测</h3>
+                <p class="card-text">水质、气象、土壤等环境指标实时监测。</p>
+                <a href="/tables/env" class="btn btn-outline-success stretched-link">进入管理</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role in [ROLE_ADMIN, ROLE_PARK_MANAGER, ROLE_ANALYST, ROLE_VISITOR] %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center p-5">
+                <i class="fas fa-users fa-3x text-success mb-3"></i>
+                <h3 class="card-title">游客管理</h3>
+                <p class="card-text">预约入园、流量控制与熔断预警。</p>
+                <a href="/tables/visitor" class="btn btn-outline-success stretched-link">进入管理</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role in [ROLE_ADMIN, ROLE_ENFORCER, ROLE_PARK_MANAGER] %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center p-5">
+                <i class="fas fa-gavel fa-3x text-success mb-3"></i>
+                <h3 class="card-title">执法监管</h3>
+                <p class="card-text">执法人员信息、执法调度与记录管理。</p>
+                <a href="/tables/law" class="btn btn-outline-success stretched-link">进入管理</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role in [ROLE_ADMIN, ROLE_RESEARCHER, ROLE_PARK_MANAGER] %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center p-5">
+                <i class="fas fa-flask fa-3x text-success mb-3"></i>
+                <h3 class="card-title">科研支撑</h3>
+                <p class="card-text">存储项目信息、支撑项目管理。</p>
+                <a href="/tables/research" class="btn btn-outline-success stretched-link">进入管理</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
