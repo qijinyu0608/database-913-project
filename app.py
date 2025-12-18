@@ -25,6 +25,7 @@ ROLE_VISITOR = '游客'
 ROLE_ENFORCER = '执法人员'
 ROLE_RESEARCHER = '科研人员'
 ROLE_TECHNICIAN = '技术人员'
+ROLE_VIEWER = '普通用户'
 
 
 # ==========================================
@@ -121,6 +122,10 @@ class SecurityManager:
 
         # 2. 游客 (假设 ID 前缀为 VI-)
         if user_id.startswith('VI-'):
+            # 特殊处理只读访客
+            if user_id == 'VI-8888-7777':
+                return SecurityManager._authenticate_user(
+                    db, VisitorInfo, VisitorAuth, user_id, password, ROLE_VIEWER)
             return SecurityManager._authenticate_user(
                 db, VisitorInfo, VisitorAuth, user_id, password, ROLE_VISITOR)
 
@@ -176,8 +181,8 @@ def require_role(roles: list):
         def decorated_function(*args, **kwargs):
             token = session.get('token')
             if not token or not SecurityManager.check_permission(token, roles):
-                flash('❌ 您的角色权限不足，无法访问此功能', 'danger')
-                return redirect(url_for('index'))  # 权限不足回首页
+                # flash('❌ 您的角色权限不足，无法访问此功能', 'danger')
+                return redirect(request.referrer or url_for('index'))  # 权限不足回上一页或首页
             return f(*args, **kwargs)
 
         return decorated_function
@@ -213,7 +218,8 @@ def inject_user_info():
         ROLE_ENFORCER=ROLE_ENFORCER,
         ROLE_RESEARCHER=ROLE_RESEARCHER,
         ROLE_PARK_MANAGER=ROLE_PARK_MANAGER,
-        ROLE_TECHNICIAN=ROLE_TECHNICIAN
+        ROLE_TECHNICIAN=ROLE_TECHNICIAN,
+        ROLE_VIEWER=ROLE_VIEWER
     )
 
 
@@ -381,7 +387,7 @@ def generic_delete(module, key, id):
 
 
 @app.route('/generic/<module>/<key>/get/<id>')
-@require_role([ROLE_ADMIN, ROLE_MONITOR, ROLE_ANALYST, ROLE_PARK_MANAGER, ROLE_TECHNICIAN, ROLE_RESEARCHER, ROLE_ENFORCER])
+@require_role([ROLE_ADMIN, ROLE_MONITOR, ROLE_ANALYST, ROLE_PARK_MANAGER, ROLE_TECHNICIAN, ROLE_RESEARCHER, ROLE_ENFORCER, ROLE_VIEWER])
 def generic_get_json(module, key, id):
     """通用：获取单条记录详情 (JSON)"""
     if module not in BUSINESS_MODELS or key not in BUSINESS_MODELS[module]:
@@ -485,7 +491,7 @@ def tables_list(business_line):
 
 # --- 生物多样性 (Refactored) ---
 @app.route('/bio')
-@require_role([ROLE_ADMIN, ROLE_MONITOR, ROLE_ANALYST, ROLE_PARK_MANAGER, ROLE_TECHNICIAN, ROLE_RESEARCHER])
+@require_role([ROLE_ADMIN, ROLE_MONITOR, ROLE_ANALYST, ROLE_PARK_MANAGER, ROLE_TECHNICIAN, ROLE_RESEARCHER, ROLE_VIEWER])
 def bio_list():
     db = get_db()
     # 加载所有相关表数据
@@ -509,7 +515,7 @@ def bio_list():
 
 # --- 生态环境 (Refactored) ---
 @app.route('/env')
-@require_role([ROLE_ADMIN, ROLE_ANALYST, ROLE_RESEARCHER, ROLE_TECHNICIAN, ROLE_PARK_MANAGER])
+@require_role([ROLE_ADMIN, ROLE_ANALYST, ROLE_RESEARCHER, ROLE_TECHNICIAN, ROLE_PARK_MANAGER, ROLE_VIEWER])
 def env_list():
     db = get_db()
     data = {
@@ -537,7 +543,7 @@ def env_add_special():
 
 # --- 游客管理 (Refactored) ---
 @app.route('/visitor')
-@require_role([ROLE_ADMIN, ROLE_PARK_MANAGER, ROLE_ANALYST, ROLE_VISITOR])
+@require_role([ROLE_ADMIN, ROLE_PARK_MANAGER, ROLE_ANALYST, ROLE_VISITOR, ROLE_VIEWER])
 def visitor_list():
     db = get_db()
     data = {
@@ -584,7 +590,7 @@ def visitor_cancel_special(id):
 
 # --- 执法监管 (Refactored) ---
 @app.route('/law')
-@require_role([ROLE_ADMIN, ROLE_ENFORCER, ROLE_PARK_MANAGER])
+@require_role([ROLE_ADMIN, ROLE_ENFORCER, ROLE_PARK_MANAGER, ROLE_VIEWER])
 def law_list():
     db = get_db()
     data = {
@@ -627,7 +633,7 @@ def law_add_special():
 
 # --- 科研支撑 (Refactored) ---
 @app.route('/research')
-@require_role([ROLE_ADMIN, ROLE_RESEARCHER, ROLE_PARK_MANAGER])
+@require_role([ROLE_ADMIN, ROLE_RESEARCHER, ROLE_PARK_MANAGER, ROLE_VIEWER])
 def research_list():
     db = get_db()
     data = {

@@ -8,7 +8,7 @@
 </div>
 
 <div class="row g-4">
-    {% if current_user.role in [ROLE_ADMIN, ROLE_MONITOR, ROLE_ANALYST, ROLE_PARK_MANAGER, ROLE_TECHNICIAN, ROLE_RESEARCHER] %}
+    {% if current_user.role in [ROLE_ADMIN, ROLE_MONITOR, ROLE_ANALYST, ROLE_PARK_MANAGER, ROLE_TECHNICIAN, ROLE_RESEARCHER, ROLE_VIEWER] %}
     <div class="col-md-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body text-center p-5">
@@ -21,7 +21,7 @@
     </div>
     {% endif %}
 
-    {% if current_user.role in [ROLE_ADMIN, ROLE_ANALYST, ROLE_RESEARCHER, ROLE_TECHNICIAN, ROLE_PARK_MANAGER] %}
+    {% if current_user.role in [ROLE_ADMIN, ROLE_ANALYST, ROLE_RESEARCHER, ROLE_TECHNICIAN, ROLE_PARK_MANAGER, ROLE_VIEWER] %}
     <div class="col-md-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body text-center p-5">
@@ -34,7 +34,7 @@
     </div>
     {% endif %}
 
-    {% if current_user.role in [ROLE_ADMIN, ROLE_PARK_MANAGER, ROLE_ANALYST, ROLE_VISITOR] %}
+    {% if current_user.role in [ROLE_ADMIN, ROLE_PARK_MANAGER, ROLE_ANALYST, ROLE_VISITOR, ROLE_VIEWER] %}
     <div class="col-md-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body text-center p-5">
@@ -47,7 +47,7 @@
     </div>
     {% endif %}
 
-    {% if current_user.role in [ROLE_ADMIN, ROLE_ENFORCER, ROLE_PARK_MANAGER] %}
+    {% if current_user.role in [ROLE_ADMIN, ROLE_ENFORCER, ROLE_PARK_MANAGER, ROLE_VIEWER] %}
     <div class="col-md-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body text-center p-5">
@@ -60,7 +60,7 @@
     </div>
     {% endif %}
 
-    {% if current_user.role in [ROLE_ADMIN, ROLE_RESEARCHER, ROLE_PARK_MANAGER] %}
+    {% if current_user.role in [ROLE_ADMIN, ROLE_RESEARCHER, ROLE_PARK_MANAGER, ROLE_VIEWER] %}
     <div class="col-md-4">
         <div class="card h-100 shadow-sm">
             <div class="card-body text-center p-5">
